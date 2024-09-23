@@ -1,13 +1,14 @@
-use std::io;
+use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{
     prelude::*,
-    widgets::{Paragraph, Block, Borders},
-    style::{Color, Style, Modifier},
+    style::{Color, Modifier, Style},
+    widgets::{Block, Borders, Paragraph},
 };
-use crossterm::event::{self, KeyCode, KeyEventKind};
+use std::{io, ops::Index};
 
 fn main() -> io::Result<()> {
-    let mut terminal = ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
+    let mut terminal =
+        ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
     let app_result = run(&mut terminal);
     terminal.clear()?;
@@ -17,39 +18,95 @@ fn main() -> io::Result<()> {
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
     let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
-    
-    let colored_chars: Vec<(char, Style)> = string_to_type
+    let mut user_input = String::new();
+    let mut index = 0;
+
+    let mut colored_chars: Vec<(char, Style)> = string_to_type
         .chars()
-        .enumerate()
-        .map(|(i, c)| {
-            match c {
-                'T' => (c, Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-                'S' => (c, Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-                '!' => (c, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                _ if i % 2 == 0 => (c, Style::default().fg(Color::Cyan)),
-                _ => (c, Style::default().fg(Color::White)),
-            }
-        })
+        .map(|c| (c, Style::default().fg(Color::DarkGray)))
         .collect();
 
     loop {
         terminal.draw(|frame| {
+            let target_char = string_to_type.chars().nth(index).unwrap_or(' ');
+            let info_text = format!("Aktueller Index: {}, Zeichen: {}", index, target_char);
+
             let colored_text = colored_chars
                 .iter()
-                .map(|(c, style)| {
-                    Span::styled(c.to_string(), *style)
-                })
+                .map(|(c, style)| Span::styled(c.to_string(), *style))
                 .collect::<Vec<_>>();
 
-            let paragraph = Paragraph::new(Line::from(colored_text))
-                .block(Block::default().borders(Borders::ALL).style(Style::default().bg(Color::Black)));
+            let info = Paragraph::new(info_text)
+                .block(Block::default().borders(Borders::ALL).title("Info"));
 
-            frame.render_widget(paragraph, frame.area());
+            // let input_display = Paragraph::new(user_input.as_str())
+            // .block(Block::default().borders(Borders::ALL).title("Ihre Eingabe"));
+
+            let target_text = Paragraph::new(Line::from(colored_text))
+                .block(Block::default().borders(Borders::ALL).title("Zieltext"));
+
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Percentage(40),
+                        Constraint::Percentage(40),
+                    ]
+                    .as_ref(),
+                )
+                .split(frame.area());
+
+            frame.render_widget(info, chunks[0]);
+            frame.render_widget(target_text, chunks[1]);
+            // frame.render_widget(input_display, chunks[2]);
         })?;
 
         if let event::Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Esc {
-                return Ok(());
+            match key.code {
+                KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                    if c == 'q' && user_input.is_empty() {
+                        return Ok(());
+                    } else {
+                        user_input.push(c);
+                        if let Some(target_char) = string_to_type.chars().nth(index) {
+                            if c == target_char {
+                                // Ändere die Farbe des korrekten Zeichens auf Weiß
+                                if let Some((_, style)) = colored_chars.get_mut(index) {
+                                    *style = Style::default().fg(Color::White);
+                                }
+                            } else {
+                                // Optional: Ändere die Farbe des falschen Zeichens auf Rot
+                                if let Some((_, style)) = colored_chars.get_mut(index) {
+                                    *style = Style::default().fg(Color::Red);
+                                }
+                            }
+                            index += 1;
+                        }
+                    }
+                }
+                KeyCode::Backspace if key.kind == KeyEventKind::Press => {
+                    // Entfernen Sie das letzte Zeichen, wenn Backspace gedrückt wird
+                    if !user_input.is_empty() {
+                        user_input.pop();
+                        if index > 0 {
+                            index -= 1;
+                            // Setze die Farbe des gelöschten Zeichens zurück auf Grau
+                            if let Some((_, style)) = colored_chars.get_mut(index) {
+                                *style = Style::default().fg(Color::DarkGray);
+                            }
+                        }
+                    }
+                }
+                KeyCode::Esc if key.kind == KeyEventKind::Press => {
+                    return Ok(());
+                }
+                KeyCode::Enter if key.kind == KeyEventKind::Press => {
+                    // Hier können Sie die Eingabe verarbeiten, z.B. überprüfen ob sie korrekt ist
+                    println!("Vollständige Eingabe: {}", user_input);
+                    user_input.clear(); // Zurücksetzen der Eingabe nach Verarbeitung
+                }
+                _ => {} // Ignorieren Sie alle anderen Tasten
             }
         }
     }
