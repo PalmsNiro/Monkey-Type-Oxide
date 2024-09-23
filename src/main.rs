@@ -20,6 +20,7 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
     let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
     let mut user_input = String::new();
     let mut index = 0;
+    let mut mistakes = 0;
 
     let mut colored_chars: Vec<(char, Style)> = string_to_type
         .chars()
@@ -29,7 +30,10 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
     loop {
         terminal.draw(|frame| {
             let target_char = string_to_type.chars().nth(index).unwrap_or(' ');
-            let info_text = format!("Aktueller Index: {}, Zeichen: {}", index, target_char);
+            let info_text = format!(
+                "Fehler: {}, Aktueller Index: {}, Zeichen: {}",
+                mistakes, index, target_char
+            );
 
             let colored_text = colored_chars
                 .iter()
@@ -80,6 +84,7 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
                                 if let Some((_, style)) = colored_chars.get_mut(index) {
                                     *style = Style::default().fg(Color::Red);
                                 }
+                                mistakes += 1;
                             }
                             index += 1;
                         }
@@ -100,11 +105,6 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
                 }
                 KeyCode::Esc if key.kind == KeyEventKind::Press => {
                     return Ok(());
-                }
-                KeyCode::Enter if key.kind == KeyEventKind::Press => {
-                    // Hier können Sie die Eingabe verarbeiten, z.B. überprüfen ob sie korrekt ist
-                    println!("Vollständige Eingabe: {}", user_input);
-                    user_input.clear(); // Zurücksetzen der Eingabe nach Verarbeitung
                 }
                 _ => {} // Ignorieren Sie alle anderen Tasten
             }
