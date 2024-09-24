@@ -35,10 +35,21 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
                 mistakes, index, target_char
             );
 
-            let colored_text = colored_chars
+            let colored_text: Vec<Span> = colored_chars
                 .iter()
-                .map(|(c, style)| Span::styled(c.to_string(), *style))
-                .collect::<Vec<_>>();
+                .enumerate()
+                .map(|(i, (c, style))| {
+                    if i == index {
+                        // Cursor-Effekt: Gelber Hintergrund für das aktuelle Zeichen
+                        Span::styled(
+                            c.to_string(),
+                            style.clone().bg(Color::Yellow).fg(Color::Black)
+                        )
+                    } else {
+                        Span::styled(c.to_string(), *style)
+                    }
+                })
+                .collect();
 
             let info = Paragraph::new(info_text)
                 .block(Block::default().borders(Borders::ALL).title("Info"));
