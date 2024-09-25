@@ -6,6 +6,10 @@ use ratatui::{
 };
 use std::{io, ops::Index};
 
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use random_word::Lang;
+
 fn main() -> io::Result<()> {
     let mut terminal =
         ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
@@ -17,7 +21,8 @@ fn main() -> io::Result<()> {
 }
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-    let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
+    // let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
+    let string_to_type = get_random_sentence(30);
     let mut user_input = String::new();
     let mut index = 0;
     let mut mistakes = 0;
@@ -43,7 +48,7 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
                         // Cursor-Effekt: Gelber Hintergrund für das aktuelle Zeichen
                         Span::styled(
                             c.to_string(),
-                            style.clone().bg(Color::Yellow).fg(Color::Black)
+                            style.clone().bg(Color::Yellow).fg(Color::Black),
                         )
                     } else {
                         Span::styled(c.to_string(), *style)
@@ -121,4 +126,17 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
             }
         }
     }
+}
+
+fn get_random_sentence(words_amount: usize) -> String {
+    let word_list: &[&str] = random_word::all(Lang::De);
+    let mut rng = thread_rng();
+
+    let selected_words: Vec<&str> = word_list
+        .choose_multiple(&mut rng, words_amount)
+        .cloned()
+        .collect();
+
+    let sentence = selected_words.join(" ");
+    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..] + "."
 }
