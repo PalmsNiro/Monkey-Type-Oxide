@@ -14,7 +14,7 @@ use rand::thread_rng;
 use random_word::Lang;
 
 use terminal_size::{terminal_size, Width};
-use textwrap::{wrap, Options};
+use textwrap::{wrap, Options, WordSplitter};
 
 fn main() -> io::Result<()> {
     let mut terminal =
@@ -27,56 +27,46 @@ fn main() -> io::Result<()> {
 }
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-    let mut width = get_terminal_width() - 10;
-    // let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
+    // let mut width = get_terminal_width() - 10;
     let random_sentence = get_random_sentence(30);
-    let mut string_to_type = wrap_text(&random_sentence, width);
-    // println!("{}", string_to_type);
-    let mut user_input = String::new();
-    let mut index = 0;
-    let mut mistakes = 0;
+    let string_to_type = random_sentence.clone(); // Keine Umbrüche hier
 
     let mut colored_chars: Vec<(char, Style)> = string_to_type
         .chars()
         .map(|c| (c, Style::default().fg(Color::DarkGray)))
         .collect();
 
+    let mut user_input = String::new();
+    let mut index = 0;
+    let mut mistakes = 0;
+
     loop {
-        width = get_terminal_width() - 10;
-        string_to_type = wrap_text(&random_sentence, width);
+        // width = get_terminal_width() - 10;
         terminal.draw(|f| draw_ui(f, &string_to_type, &colored_chars, index, mistakes))?;
 
         if let event::Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                    if c == 'q' && user_input.is_empty() {
-                        return Ok(());
-                    } else {
+                    if let Some(target_char) = string_to_type.chars().nth(index) {
                         user_input.push(c);
-                        if let Some(target_char) = string_to_type.chars().nth(index) {
-                            if c == target_char {
-                                // Ändere die Farbe des korrekten Zeichens auf Weiß
-                                if let Some((_, style)) = colored_chars.get_mut(index) {
-                                    *style = Style::default().fg(Color::White);
-                                }
-                            } else {
-                                // Optional: Ändere die Farbe des falschen Zeichens auf Rot
-                                if let Some((_, style)) = colored_chars.get_mut(index) {
-                                    *style = Style::default().fg(Color::Red);
-                                }
-                                mistakes += 1;
+                        if c == target_char {
+                            if let Some((_, style)) = colored_chars.get_mut(index) {
+                                *style = Style::default().fg(Color::Green);
                             }
-                            index += 1;
+                        } else {
+                            if let Some((_, style)) = colored_chars.get_mut(index) {
+                                *style = Style::default().fg(Color::Red);
+                            }
+                            mistakes += 1;
                         }
+                        index += 1;
                     }
                 }
                 KeyCode::Backspace if key.kind == KeyEventKind::Press => {
-                    // Entfernen Sie das letzte Zeichen, wenn Backspace gedrückt wird
                     if !user_input.is_empty() {
                         user_input.pop();
                         if index > 0 {
                             index -= 1;
-                            // Setze die Farbe des gelöschten Zeichens zurück auf Grau
                             if let Some((_, style)) = colored_chars.get_mut(index) {
                                 *style = Style::default().fg(Color::DarkGray);
                             }
@@ -86,7 +76,7 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
                 KeyCode::Esc if key.kind == KeyEventKind::Press => {
                     return Ok(());
                 }
-                _ => {} // Ignorieren Sie alle anderen Tasten
+                _ => {}
             }
         }
     }
@@ -105,18 +95,19 @@ fn get_random_sentence(words_amount: usize) -> String {
     sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..]
 }
 
-fn wrap_text(text: &str, width: usize) -> String {
+fn wrap_text(text: &str, width: usize) -> Vec<String> {
     let options = Options::new(width)
         .word_separator(textwrap::WordSeparator::AsciiSpace)
-        .word_splitter(textwrap::WordSplitter::NoHyphenation);
-    wrap(text, options).join("\n")
+        .word_splitter(WordSplitter::NoHyphenation)
+        .break_words(false);
+    wrap(text, options).into_iter().map(|s| s.into_owned()).collect()
 }
 
-fn get_terminal_width() -> usize {
-    terminal_size()
-        .map(|(Width(w), _)| w as usize)
-        .unwrap_or(80)
-}
+// fn get_terminal_width() -> usize {
+//     terminal_size()
+//         .map(|(Width(w), _)| w as usize)
+//         .unwrap_or(80)
+// }
 
 fn draw_ui(
     frame: &mut Frame,
@@ -131,37 +122,33 @@ fn draw_ui(
         mistakes, index, target_char
     );
 
-    let info =
-        Paragraph::new(info_text).block(Block::default().borders(Borders::ALL).title("Info"));
+    let info = Paragraph::new(info_text)
+        .block(Block::default().borders(Borders::ALL).title("Info"));
 
-    let colored_text: Vec<Line> = colored_chars
-        .chunks(frame.area().width as usize - 2) // -2 für die Ränder
-        .map(|chunk| {
-            Line::from(
-                chunk
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (c, style))| {
-                        let adjusted_index = i
-                            + (chunk.as_ptr() as usize - colored_chars.as_ptr() as usize)
-                                / std::mem::size_of::<(char, Style)>();
-                        if adjusted_index == index {
-                            Span::styled(
-                                c.to_string(),
-                                style.clone().bg(Color::Yellow).fg(Color::Black),
-                            )
-                        } else {
-                            Span::styled(c.to_string(), *style)
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-            )
-        })
-        .collect();
+    let available_width = frame.area().width as usize - 4; // -4 für die Ränder und etwas Puffer
+    let wrapped_text = wrap_text(string_to_type, available_width);
+
+    let mut colored_text: Vec<Line> = Vec::new();
+    let mut current_index = 0;
+
+    for line in wrapped_text {
+        let spans: Vec<Span> = line
+            .chars()
+            .map(|c| {
+                let style = if current_index == index {
+                    colored_chars[current_index].1.clone().bg(Color::Yellow).fg(Color::Black)
+                } else {
+                    colored_chars[current_index].1
+                };
+                current_index += 1;
+                Span::styled(c.to_string(), style)
+            })
+            .collect();
+        colored_text.push(Line::from(spans));
+    }
 
     let target_text = Paragraph::new(colored_text)
-        .block(Block::default().borders(Borders::ALL).title("Zieltext"))
-        .wrap(ratatui::widgets::Wrap { trim: true });
+        .block(Block::default().borders(Borders::ALL).title("Zieltext"));
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
