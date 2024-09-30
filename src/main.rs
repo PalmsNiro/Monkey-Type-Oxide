@@ -27,9 +27,10 @@ fn main() -> io::Result<()> {
 }
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-    let width = get_terminal_width() - 10;
+    let mut width = get_terminal_width() - 10;
     // let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
-    let string_to_type = wrap_text(&get_random_sentence(30), width);
+    let random_sentence = get_random_sentence(30);
+    let mut string_to_type = wrap_text(&random_sentence, width);
     // println!("{}", string_to_type);
     let mut user_input = String::new();
     let mut index = 0;
@@ -41,6 +42,8 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
         .collect();
 
     loop {
+        width = get_terminal_width() - 10;
+        string_to_type = wrap_text(&random_sentence, width);
         terminal.draw(|f| draw_ui(f, &string_to_type, &colored_chars, index, mistakes))?;
 
         if let event::Event::Key(key) = event::read()? {
@@ -99,7 +102,7 @@ fn get_random_sentence(words_amount: usize) -> String {
         .collect();
 
     let sentence = selected_words.join(" ");
-    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..] 
+    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..]
 }
 
 fn wrap_text(text: &str, width: usize) -> String {
