@@ -2,18 +2,17 @@ use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::*,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::Line,
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use std::{io, ops::Index};
+use std::io;
 
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use random_word::Lang;
 
-use terminal_size::{terminal_size, Width};
 use textwrap::{wrap, Options, WordSplitter};
 
 fn main() -> io::Result<()> {
