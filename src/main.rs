@@ -10,6 +10,9 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use random_word::Lang;
 
+use textwrap::{wrap, Options};
+use terminal_size::{Width, terminal_size};
+
 fn main() -> io::Result<()> {
     let mut terminal =
         ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(std::io::stdout()))?;
@@ -21,8 +24,10 @@ fn main() -> io::Result<()> {
 }
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+    let width = get_terminal_width()-10;
     // let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
-    let string_to_type = get_random_sentence(30);
+    let string_to_type = wrap_text(&get_random_sentence(30),width);
+    println!("{}", string_to_type);
     let mut user_input = String::new();
     let mut index = 0;
     let mut mistakes = 0;
@@ -139,4 +144,15 @@ fn get_random_sentence(words_amount: usize) -> String {
 
     let sentence = selected_words.join(" ");
     sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..] + "."
+}
+
+fn wrap_text(text: &str, width: usize) -> String {
+    let options = Options::new(width)
+        .word_separator(textwrap::WordSeparator::AsciiSpace)
+        .word_splitter(textwrap::WordSplitter::NoHyphenation);
+    wrap(text, options).join("\n")
+}
+
+fn get_terminal_width() -> usize {
+    terminal_size().map(|(Width(w), _)| w as usize).unwrap_or(80)
 }
