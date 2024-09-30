@@ -1,8 +1,11 @@
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{
+    layout::{Constraint, Direction, Layout},
     prelude::*,
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Paragraph},
+    text::Line,
+    widgets::{Block, Borders, Paragraph, Wrap},
+    Frame,
 };
 use std::{io, ops::Index};
 
@@ -10,8 +13,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use random_word::Lang;
 
+use terminal_size::{terminal_size, Width};
 use textwrap::{wrap, Options};
-use terminal_size::{Width, terminal_size};
 
 fn main() -> io::Result<()> {
     let mut terminal =
@@ -24,10 +27,10 @@ fn main() -> io::Result<()> {
 }
 
 fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-    let width = get_terminal_width()-10;
+    let width = get_terminal_width() - 10;
     // let string_to_type = String::from("This will be the String for the Terminal Type Speed Test! Lets see how fast you can type what is standing here.");
-    let string_to_type = wrap_text(&get_random_sentence(30),width);
-    println!("{}", string_to_type);
+    let string_to_type = wrap_text(&get_random_sentence(30), width);
+    // println!("{}", string_to_type);
     let mut user_input = String::new();
     let mut index = 0;
     let mut mistakes = 0;
@@ -38,54 +41,7 @@ fn run(terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
         .collect();
 
     loop {
-        terminal.draw(|frame| {
-            let target_char = string_to_type.chars().nth(index).unwrap_or(' ');
-            let info_text = format!(
-                "Fehler: {}, Aktueller Index: {}, Zeichen: {}",
-                mistakes, index, target_char
-            );
-
-            let colored_text: Vec<Span> = colored_chars
-                .iter()
-                .enumerate()
-                .map(|(i, (c, style))| {
-                    if i == index {
-                        // Cursor-Effekt: Gelber Hintergrund für das aktuelle Zeichen
-                        Span::styled(
-                            c.to_string(),
-                            style.clone().bg(Color::Yellow).fg(Color::Black),
-                        )
-                    } else {
-                        Span::styled(c.to_string(), *style)
-                    }
-                })
-                .collect();
-
-            let info = Paragraph::new(info_text)
-                .block(Block::default().borders(Borders::ALL).title("Info"));
-
-            // let input_display = Paragraph::new(user_input.as_str())
-            // .block(Block::default().borders(Borders::ALL).title("Ihre Eingabe"));
-
-            let target_text = Paragraph::new(Line::from(colored_text))
-                .block(Block::default().borders(Borders::ALL).title("Zieltext"));
-
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Percentage(40),
-                        Constraint::Percentage(40),
-                    ]
-                    .as_ref(),
-                )
-                .split(frame.area());
-
-            frame.render_widget(info, chunks[0]);
-            frame.render_widget(target_text, chunks[1]);
-            // frame.render_widget(input_display, chunks[2]);
-        })?;
+        terminal.draw(|f| draw_ui(f, &string_to_type, &colored_chars, index, mistakes))?;
 
         if let event::Event::Key(key) = event::read()? {
             match key.code {
@@ -143,7 +99,7 @@ fn get_random_sentence(words_amount: usize) -> String {
         .collect();
 
     let sentence = selected_words.join(" ");
-    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..] + "."
+    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..] 
 }
 
 fn wrap_text(text: &str, width: usize) -> String {
@@ -154,5 +110,68 @@ fn wrap_text(text: &str, width: usize) -> String {
 }
 
 fn get_terminal_width() -> usize {
-    terminal_size().map(|(Width(w), _)| w as usize).unwrap_or(80)
+    terminal_size()
+        .map(|(Width(w), _)| w as usize)
+        .unwrap_or(80)
+}
+
+fn draw_ui(
+    frame: &mut Frame,
+    string_to_type: &str,
+    colored_chars: &[(char, Style)],
+    index: usize,
+    mistakes: usize,
+) {
+    let target_char = string_to_type.chars().nth(index).unwrap_or(' ');
+    let info_text = format!(
+        "Fehler: {}, Aktueller Index: {}, Zeichen: {}",
+        mistakes, index, target_char
+    );
+
+    let info =
+        Paragraph::new(info_text).block(Block::default().borders(Borders::ALL).title("Info"));
+
+    let colored_text: Vec<Line> = colored_chars
+        .chunks(frame.area().width as usize - 2) // -2 für die Ränder
+        .map(|chunk| {
+            Line::from(
+                chunk
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (c, style))| {
+                        let adjusted_index = i
+                            + (chunk.as_ptr() as usize - colored_chars.as_ptr() as usize)
+                                / std::mem::size_of::<(char, Style)>();
+                        if adjusted_index == index {
+                            Span::styled(
+                                c.to_string(),
+                                style.clone().bg(Color::Yellow).fg(Color::Black),
+                            )
+                        } else {
+                            Span::styled(c.to_string(), *style)
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect();
+
+    let target_text = Paragraph::new(colored_text)
+        .block(Block::default().borders(Borders::ALL).title("Zieltext"))
+        .wrap(ratatui::widgets::Wrap { trim: true });
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Length(3),
+                Constraint::Percentage(40),
+                Constraint::Percentage(40),
+            ]
+            .as_ref(),
+        )
+        .split(frame.area());
+
+    frame.render_widget(info, chunks[0]);
+    frame.render_widget(target_text, chunks[1]);
 }
