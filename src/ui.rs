@@ -20,10 +20,11 @@ pub fn draw_ui(frame: &mut Frame, app: &App) {
         .split(frame.area());
 
     let info_text = format!(
-        "Fehler: {}, Aktueller Index: {}, Zeichen: {}",
+        "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Accuracy: {}%",
         app.mistakes,
         app.index,
-        app.target_text.chars().nth(app.index).unwrap_or(' ')
+        app.target_text.chars().nth(app.index).unwrap_or(' '),
+        format!("{:.2}", app.accuracy())
     );
 
     let info =
