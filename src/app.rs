@@ -68,6 +68,14 @@ impl App {
         }
     }
 
+    pub fn progress(&self) -> u16 {
+        if self.target_text.is_empty() {
+            0
+        } else {
+            ((self.index as f64 / self.target_text.len() as f64) * 100.0) as u16
+        }
+    }
+
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
