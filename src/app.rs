@@ -1,5 +1,9 @@
 use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::{prelude::Backend, style::{Color, Style}, Terminal};
+use ratatui::{
+    prelude::Backend,
+    style::{Color, Style},
+    Terminal,
+};
 use std::io;
 
 use crate::ui::draw_ui;
@@ -26,14 +30,14 @@ impl App {
             user_input: String::new(),
             index: 0,
             mistakes: 0,
-            total_chars: 0,  // Initialisierung des neuen Feldes
+            total_chars: 0, // Initialisierung des neuen Feldes
         }
     }
 
     pub fn type_char(&mut self, c: char) {
         if let Some(target_char) = self.target_text.chars().nth(self.index) {
             self.user_input.push(c);
-            self.total_chars += 1;  // Inkrementierung der Gesamtanzahl der getippten Zeichen
+            self.total_chars += 1; // Inkrementierung der Gesamtanzahl der getippten Zeichen
             if c == target_char {
                 if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
                     *style = Style::default().fg(Color::Green);
@@ -79,7 +83,7 @@ impl App {
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
-    
+
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
