@@ -129,20 +129,39 @@ fn draw_ui(
 
     let mut colored_text: Vec<Line> = Vec::new();
     let mut current_index = 0;
+    let mut _cursor_line = 0;
+    let mut _cursor_column = 0;
 
-    for line in wrapped_text {
-        let spans: Vec<Span> = line
-            .chars()
-            .map(|c| {
-                let style = if current_index == index {
-                    colored_chars[current_index].1.clone().bg(Color::Yellow).fg(Color::Black)
-                } else {
-                    colored_chars[current_index].1
-                };
-                current_index += 1;
-                Span::styled(c.to_string(), style)
-            })
-            .collect();
+    for (line_index, line) in wrapped_text.iter().enumerate() {
+        let mut spans: Vec<Span> = Vec::new();
+        let mut line_length = 0;
+
+        for c in line.chars() {
+            let style = if current_index == index {
+                _cursor_line = line_index;
+                _cursor_column = line_length;
+                colored_chars[current_index].1.clone().bg(Color::Yellow).fg(Color::Black)
+            } else {
+                colored_chars[current_index].1
+            };
+            spans.push(Span::styled(c.to_string(), style));
+            current_index += 1;
+            line_length += 1;
+        }
+
+        // Füge ein Leerzeichen am Ende jeder Zeile hinzu, außer bei der letzten
+        if line_index < wrapped_text.len() - 1 {
+            let space_style = if current_index == index {
+                _cursor_line = line_index;
+                _cursor_column = line_length;
+                Style::default().bg(Color::Yellow).fg(Color::Black)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+            spans.push(Span::styled(" ", space_style));
+            current_index += 1;
+        }
+
         colored_text.push(Line::from(spans));
     }
 
