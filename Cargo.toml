@@ -14,3 +14,7 @@ rand = "0.8.5"
 
 textwrap = "0.16"
 terminal_size = "0.4"
+
+chrono = "0.4.38"
+env_logger = "0.11.5"
+log = "0.4.22"
