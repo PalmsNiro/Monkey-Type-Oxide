@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
     }
 
     info!("starting the Applications");
-    
+
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
 
@@ -38,7 +38,7 @@ fn main() -> io::Result<()> {
 }
 
 fn setup_logger() -> Result<(), Box<dyn std::error::Error>> {
-    let logfile = File::create(format!("game_log_{}.txt", Local::now().format("%Y-%m-%d_%H-%M-%S")))?;
+    let logfile = File::create(format!("logs/game_log_{}.txt", Local::now().format("%Y-%m-%d_%H-%M-%S")))?;
 
     Builder::new()
         .target(env_logger::Target::Pipe(Box::new(logfile)))

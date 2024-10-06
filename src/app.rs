@@ -6,7 +6,7 @@ use ratatui::{
 };
 use std::io;
 
-use crate::ui::draw_ui;
+use crate::ui::{draw_typing_screen, draw_ui};
 
 pub struct App {
     pub target_text: String,
@@ -15,6 +15,7 @@ pub struct App {
     pub index: usize,
     pub mistakes: usize,
     pub total_chars: usize,
+    pub text_finished: bool,
 }
 
 impl App {
@@ -31,6 +32,7 @@ impl App {
             index: 0,
             mistakes: 0,
             total_chars: 0, // Initialisierung des neuen Feldes
+            text_finished: true,
         }
     }
 
