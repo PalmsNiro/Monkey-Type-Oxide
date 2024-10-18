@@ -21,6 +21,10 @@ fn main() -> io::Result<()> {
         eprintln!("Failed to set up logger: {}", e);
         return Ok(());
     }
+    
+    crossterm::terminal::enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    crossterm::execute!(stdout, crossterm::terminal::EnterAlternateScreen)?;
 
     info!("starting the Applications");
     
@@ -33,6 +37,9 @@ fn main() -> io::Result<()> {
 
     terminal.clear()?;
     terminal.show_cursor()?;
+
+    crossterm::terminal::disable_raw_mode()?;
+    crossterm::execute!(io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
 
     result
 }
