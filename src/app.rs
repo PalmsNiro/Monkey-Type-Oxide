@@ -8,6 +8,12 @@ use std::io;
 
 use crate::ui::{draw_typing_screen, draw_ui};
 
+pub enum AppState {
+    StartScreen,
+    RunningTest,
+    EndScreen,
+}
+
 pub struct App {
     pub target_text: String,
     pub colored_chars: Vec<(char, Style)>,
@@ -32,7 +38,7 @@ impl App {
             index: 0,
             mistakes: 0,
             total_chars: 0, // Initialisierung des neuen Feldes
-            text_finished: true,
+            text_finished: false,
         }
     }
 
@@ -82,23 +88,43 @@ impl App {
         }
     }
 
+    fn handle_key_event(&mut self) -> Result<(), io::Error> {
+        Ok(if let event::Event::Key(key) = event::read()? {
+            match key.code {
+                KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                    self.type_char(c);
+                }
+                KeyCode::Backspace if key.kind == KeyEventKind::Press => {
+                    self.backspace();
+                }
+                KeyCode::Esc if key.kind == KeyEventKind::Press => {
+                    return Ok(());
+                }
+                _ => {}
+            }
+        })
+    }
+
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        let mut app_state = AppState::StartScreen;
+
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
 
-            if let event::Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                        self.type_char(c);
+            match app_state {
+                AppState::StartScreen => {
+                    self.handle_key_event()?;
+                    if self.progress() > 0 {
+                        app_state = AppState::RunningTest
                     }
-                    KeyCode::Backspace if key.kind == KeyEventKind::Press => {
-                        self.backspace();
-                    }
-                    KeyCode::Esc if key.kind == KeyEventKind::Press => {
-                        return Ok(());
-                    }
-                    _ => {}
                 }
+                AppState::RunningTest => {
+                    self.handle_key_event()?;
+                    if self.progress() == 100 {
+                        app_state = AppState::EndScreen
+                    }
+                }
+                AppState::EndScreen => todo!(),
             }
         }
     }
