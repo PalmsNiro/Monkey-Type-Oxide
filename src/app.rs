@@ -22,7 +22,7 @@ pub struct App {
     pub mistakes: usize,
     pub total_chars: usize,
     pub text_finished: bool,
-    pub state : AppState,
+    pub state: AppState,
 }
 
 impl App {
@@ -40,7 +40,7 @@ impl App {
             mistakes: 0,
             total_chars: 0, // Initialisierung des neuen Feldes
             text_finished: false,
-            state:AppState::StartScreen,
+            state: AppState::StartScreen,
         }
     }
 
@@ -108,7 +108,6 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
 
@@ -129,4 +128,40 @@ impl App {
             }
         }
     }
+}
+
+/////////////////////////////////
+///************Tests***********//
+/////////////////////////////////
+
+// In app.rs am Ende der Datei
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initialization() {
+        let test_text = String::from("test test test");
+        let app = App::new(test_text);
+        
+        assert_eq!(app.target_text, "test test test");
+        assert_eq!(app.target_text.len(), 14);
+        assert_eq!(app.colored_chars.len(), app.target_text.len());
+        assert_eq!(app.index, 0);
+        assert_eq!(app.mistakes, 0);
+        assert_eq!(app.total_chars, 0);
+        assert_eq!(app.text_finished, false);
+    }
+
+
+    fn test_type_char(){}
+
+    fn test_backspace(){}
+    
+    fn test_accuracy(){}
+    
+    fn test_progress(){}
+    
+    fn test_handle_key_event(){}
+
 }
