@@ -22,6 +22,7 @@ pub struct App {
     pub mistakes: usize,
     pub total_chars: usize,
     pub text_finished: bool,
+    pub state : AppState,
 }
 
 impl App {
@@ -39,6 +40,7 @@ impl App {
             mistakes: 0,
             total_chars: 0, // Initialisierung des neuen Feldes
             text_finished: false,
+            state:AppState::StartScreen,
         }
     }
 
@@ -106,22 +108,21 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        let mut app_state = AppState::StartScreen;
-
+        
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
 
-            match app_state {
+            match self.state {
                 AppState::StartScreen => {
                     self.handle_key_event()?;
                     if self.progress() > 0 {
-                        app_state = AppState::RunningTest
+                        self.state = AppState::RunningTest
                     }
                 }
                 AppState::RunningTest => {
                     self.handle_key_event()?;
-                    if self.progress() == 100 {
-                        app_state = AppState::EndScreen
+                    if self.text_finished {
+                        self.state = AppState::EndScreen
                     }
                 }
                 AppState::EndScreen => todo!(),
