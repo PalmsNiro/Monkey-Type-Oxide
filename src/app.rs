@@ -6,7 +6,12 @@ use ratatui::{
 };
 use std::io;
 
-use crate::ui::{draw_typing_screen, draw_ui};
+use crate::{
+    game::get_random_sentence,
+    ui::{draw_typing_screen, draw_ui},
+};
+
+const words_amount: u16 = 2;
 
 pub enum AppState {
     StartScreen,
@@ -22,25 +27,27 @@ pub struct App {
     pub mistakes: usize,
     pub total_chars: usize,
     pub text_finished: bool,
-    pub state : AppState,
+    pub state: AppState,
 }
 
 impl App {
-    pub fn new(target_text: String) -> Self {
-        let colored_chars = target_text
+    pub fn new() -> Self {
+        let text = get_random_sentence(words_amount as usize);
+
+        let colored_chars = text
             .chars()
             .map(|c| (c, Style::default().fg(Color::DarkGray)))
             .collect();
 
         Self {
-            target_text,
+            target_text: text,
             colored_chars,
             user_input: String::new(),
             index: 0,
             mistakes: 0,
             total_chars: 0, // Initialisierung des neuen Feldes
             text_finished: false,
-            state:AppState::StartScreen,
+            state: AppState::StartScreen,
         }
     }
 
@@ -90,25 +97,42 @@ impl App {
         }
     }
 
+    fn reset(&mut self) {
+        let new_app = App::new();
+        *self = new_app;
+    }
+
     fn handle_key_event(&mut self) -> Result<(), io::Error> {
-        Ok(if let event::Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                    self.type_char(c);
+        match self.state {
+            AppState::EndScreen => Ok(if let event::Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                        if c == 'r' || c == 'R' {
+                            self.reset();
+                            println!("reset called");
+                        }
+                    }
+                    _ => {}
                 }
-                KeyCode::Backspace if key.kind == KeyEventKind::Press => {
-                    self.backspace();
+            }),
+            _ => Ok(if let event::Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                        self.type_char(c);
+                    }
+                    KeyCode::Backspace if key.kind == KeyEventKind::Press => {
+                        self.backspace();
+                    }
+                    KeyCode::Esc if key.kind == KeyEventKind::Press => {
+                        return Ok(());
+                    }
+                    _ => {}
                 }
-                KeyCode::Esc if key.kind == KeyEventKind::Press => {
-                    return Ok(());
-                }
-                _ => {}
-            }
-        })
+            }),
+        }
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        
         loop {
             terminal.draw(|f| draw_ui(f, &self))?;
 
@@ -121,11 +145,16 @@ impl App {
                 }
                 AppState::RunningTest => {
                     self.handle_key_event()?;
+                    if self.index == self.target_text.len() {
+                        self.text_finished = true;
+                    }
                     if self.text_finished {
                         self.state = AppState::EndScreen
                     }
                 }
-                AppState::EndScreen => todo!(),
+                AppState::EndScreen => {
+                    self.handle_key_event()?;
+                }
             }
         }
     }

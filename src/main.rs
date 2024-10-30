@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     terminal.clear()?;
 
-    let mut app = App::new(get_random_sentence(30));
+    let mut app = App::new();
 
     let result = app.run(&mut terminal);
 
