@@ -4,7 +4,7 @@ use ratatui::{
     style::{Color, Style},
     Terminal,
 };
-use std::io;
+use std::{io, process};
 
 use crate::{
     game::get_random_sentence,
@@ -109,7 +109,9 @@ impl App {
                     KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
                         if c == 'r' || c == 'R' {
                             self.reset();
-                            println!("reset called");
+                        }
+                        if c == 'q' || c == 'Q' {
+                            process::exit(0);
                         }
                     }
                     _ => {}
