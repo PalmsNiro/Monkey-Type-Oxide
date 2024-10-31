@@ -11,7 +11,7 @@ use crate::{
     ui::{draw_typing_screen, draw_ui},
 };
 
-const words_amount: u16 = 2;
+const WORDS_AMOUNT: u16 = 15;
 
 pub enum AppState {
     StartScreen,
@@ -32,8 +32,8 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let text = get_random_sentence(words_amount as usize);
-
+        let text = get_random_sentence(WORDS_AMOUNT as usize);
+        
         let colored_chars = text
             .chars()
             .map(|c| (c, Style::default().fg(Color::DarkGray)))

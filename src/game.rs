@@ -12,5 +12,15 @@ pub fn get_random_sentence(words_amount: usize) -> String {
         .collect();
 
     let sentence = selected_words.join(" ");
-    sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..]
+    let capitalized = sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..];
+    
+    // Ersetze Umlaute
+    capitalized
+        .replace("ä", "ae")
+        .replace("ö", "oe")
+        .replace("ü", "ue")
+        .replace("Ä", "Ae")
+        .replace("Ö", "Oe")
+        .replace("Ü", "Ue")
+        .replace("ß", "ss")
 }

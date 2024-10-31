@@ -13,7 +13,6 @@ use chrono::Local;
 use std::io::Write;
 
 use crate::app::App;
-use crate::game::get_random_sentence;
 
 fn main() -> io::Result<()> {
     //Logger setup
