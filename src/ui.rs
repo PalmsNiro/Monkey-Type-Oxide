@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Gauge, Paragraph},
@@ -9,7 +9,7 @@ use textwrap::{wrap, Options, WordSplitter};
 
 use crate::app::App;
 
-pub fn draw_ui(frame: &mut Frame, app: &App) {
+pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -53,6 +53,29 @@ pub fn draw_ui(frame: &mut Frame, app: &App) {
         .percent(progress);
 
     frame.render_widget(gauge, chunks[3]);
+}
+
+pub fn draw_end_screen(frame: &mut Frame, app: &App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(5),
+        ])
+        .split(frame.area());
+
+
+    let accuracy_text = format!("Accuracy: {}", app.accuracy().to_string());
+    let accuracy_info = Paragraph::new(accuracy_text).alignment(Alignment::Center);
+    frame.render_widget(accuracy_info, chunks[0]);
+}
+
+pub fn draw_ui(frame: &mut Frame,app: &App){
+    if!app.text_finished{
+        draw_typing_screen(frame, app);
+    }else{
+        draw_end_screen(frame, app);
+    }
+
 }
 
 fn wrap_text(text: &str, width: usize) -> Vec<String> {
