@@ -13,14 +13,14 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),      // Info-Leiste
-            Constraint::Percentage(40), // Zieltext
-            Constraint::Percentage(40), // Platz für zukünftige Erweiterungen
-            Constraint::Length(3),      // Fortschrittsanzeige
+            Constraint::Length(3),      // Info-Bar
+            Constraint::Percentage(40), // Goaltext
+            Constraint::Percentage(40), // Space for future use
+            Constraint::Length(3),      // Progress-Bar
         ])
         .split(frame.area());
 
-    //Infotext anzeige
+    //Infotext
     let info_text = format!(
         "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Genauigkeit: {:.2}%, ",
         typing_test.mistakes,
@@ -38,15 +38,13 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
 
     frame.render_widget(info, chunks[0]);
 
-    // Ziel Text Anzeige
+    // Goal Text
     let available_width = chunks[1].width as usize - 4;
     let wrapped_text = wrap_text(&typing_test.target_text, available_width);
     let colored_text =
         create_colored_text(&wrapped_text, &typing_test.colored_chars, typing_test.index);
-
     let target_text = Paragraph::new(colored_text)
         .block(Block::default().borders(Borders::ALL).title("Zieltext"));
-
     frame.render_widget(target_text, chunks[1]);
 
     // Progress Bar
@@ -85,7 +83,11 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let time_wpm_info = Paragraph::new(time_wpm_text).alignment(Alignment::Center);
     frame.render_widget(time_wpm_info, chunks[1]);
 
-    let error_text = format!("Mistakes: {} out of {} total characters", typing_test.mistakes,  typing_test.target_text.len());
+    let error_text = format!(
+        "Mistakes: {} out of {} total characters",
+        typing_test.mistakes,
+        typing_test.target_text.len()
+    );
     let error_info = Paragraph::new(error_text).alignment(Alignment::Center);
     frame.render_widget(error_info, chunks[2]);
 }

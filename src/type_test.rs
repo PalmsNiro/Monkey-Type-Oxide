@@ -1,5 +1,5 @@
 use std::{
-    clone, io,
+    io,
     time::{Duration, Instant},
 };
 
@@ -23,12 +23,12 @@ pub struct TypingTest {
     pub total_chars_tipped: usize,
     pub total_words: usize,
     pub text_finished: bool,
-    pub start_time: Option<Instant>, // Zeitpunkt wenn Test startet
-    pub end_time: Option<Instant>,   // Zeitpunkt wenn Test endet
+    pub start_time: Option<Instant>,
+    pub end_time: Option<Instant>,
 }
 impl TypingTest {
     pub fn new(words_amount: usize, lan: Language, test_type: TestType) -> Self {
-        let text = Self::get_random_sentence(words_amount, &lan); // Übergebe die Sprache als Parameter
+        let text = Self::get_random_sentence(words_amount, &lan);
         let colored_chars = text
             .chars()
             .map(|c| (c, Style::default().fg(Color::DarkGray)))
@@ -50,7 +50,6 @@ impl TypingTest {
         }
     }
 
-    // Statische Methode ohne &self
     pub fn get_random_sentence(words_amount: usize, language: &Language) -> String {
         let lan = match language {
             Language::De => Lang::De,
@@ -104,7 +103,7 @@ impl TypingTest {
             }
 
             self.user_input.push(c);
-            self.total_chars_tipped += 1; // Inkrementierung der Gesamtanzahl der getippten Zeichen
+            self.total_chars_tipped += 1;
             if c == target_char {
                 if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
                     *style = Style::default().fg(Color::Green);
@@ -135,7 +134,8 @@ impl TypingTest {
         if self.total_chars_tipped == 0 {
             100.0
         } else {
-            ((self.total_chars_tipped - self.mistakes) as f64 / self.total_chars_tipped as f64) * 100.0
+            ((self.total_chars_tipped - self.mistakes) as f64 / self.total_chars_tipped as f64)
+                * 100.0
         }
     }
 
@@ -182,8 +182,7 @@ impl TypingTest {
             return 0.0;
         }
 
-        // Standardmäßig wird ein Wort als 5 Zeichen definiert
-        let words = self.index as f64 / 5.0;
+        let words = self.index as f64 / 5.0; //Standart definiton of len for a word is 5
         (words * 60.0) / elapsed_seconds
     }
 }

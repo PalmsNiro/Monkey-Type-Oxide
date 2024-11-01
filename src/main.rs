@@ -5,9 +5,6 @@ mod options;
 
 use ratatui::prelude::*;
 use std::io;
-// use std::thread::Builder;
-
-
 
 use crate::app::App;
 
