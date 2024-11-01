@@ -1,6 +1,7 @@
 mod app;
-mod game;
 mod ui;
+mod type_test;
+mod options;
 
 use ratatui::prelude::*;
 use std::io;

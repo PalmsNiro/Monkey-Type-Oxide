@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.28.1"
-ratatui = "0.28.1"
+ratatui = "0.29.0"
 
-random_word = { version = "0.4.3", features = ["de"] }
+random_word = { version = "0.4.3", features = ["de", "en"] }
 rand = "0.8.5"
 
 textwrap = "0.16"

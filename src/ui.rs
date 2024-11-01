@@ -7,9 +7,9 @@ use ratatui::{
 };
 use textwrap::{wrap, Options, WordSplitter};
 
-use crate::app::App;
+use crate::{app::AppState, type_test::TypingTest};
 
-pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
+pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -23,11 +23,15 @@ pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
     //Infotext anzeige
     let info_text = format!(
         "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Genauigkeit: {:.2}%, Fortschritt:{}",
-        app.mistakes,
-        app.index,
-        app.target_text.chars().nth(app.index).unwrap_or(' '),
-        app.accuracy(),
-        app.progress()
+        typing_test.mistakes,
+        typing_test.index,
+        typing_test
+            .target_text
+            .chars()
+            .nth(typing_test.index)
+            .unwrap_or(' '),
+        typing_test.accuracy(),
+        typing_test.progress()
     );
 
     let info =
@@ -37,8 +41,9 @@ pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
 
     // Ziel Text Anzeige
     let available_width = chunks[1].width as usize - 4;
-    let wrapped_text = wrap_text(&app.target_text, available_width);
-    let colored_text = create_colored_text(&wrapped_text, &app.colored_chars, app.index);
+    let wrapped_text = wrap_text(&typing_test.target_text, available_width);
+    let colored_text =
+        create_colored_text(&wrapped_text, &typing_test.colored_chars, typing_test.index);
 
     let target_text = Paragraph::new(colored_text)
         .block(Block::default().borders(Borders::ALL).title("Zieltext"));
@@ -46,7 +51,7 @@ pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(target_text, chunks[1]);
 
     // Progress Bar
-    let progress = app.progress();
+    let progress = typing_test.progress();
     let gauge = Gauge::default()
         .block(Block::default().borders(Borders::ALL).title("Fortschritt"))
         .gauge_style(Style::default().fg(Color::Cyan))
@@ -55,27 +60,22 @@ pub fn draw_typing_screen(frame: &mut Frame, app: &App) {
     frame.render_widget(gauge, chunks[3]);
 }
 
-pub fn draw_end_screen(frame: &mut Frame, app: &App) {
+pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(5),
-        ])
+        .constraints([Constraint::Length(5)])
         .split(frame.area());
 
-
-    let accuracy_text = format!("Accuracy: {}", app.accuracy().to_string());
+    let accuracy_text = format!("Accuracy: {}", typing_test.accuracy().to_string());
     let accuracy_info = Paragraph::new(accuracy_text).alignment(Alignment::Center);
     frame.render_widget(accuracy_info, chunks[0]);
 }
 
-pub fn draw_ui(frame: &mut Frame,app: &App){
-    if!app.text_finished{
-        draw_typing_screen(frame, app);
-    }else{
-        draw_end_screen(frame, app);
+pub fn draw_ui(frame: &mut Frame, typing_test: &TypingTest, state: &AppState) {
+    match state {
+        AppState::EndScreen => draw_end_screen(frame, typing_test),
+        _ => draw_typing_screen(frame, typing_test),
     }
-
 }
 
 fn wrap_text(text: &str, width: usize) -> Vec<String> {
