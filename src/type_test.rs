@@ -1,4 +1,4 @@
-use std::io;
+use std::{clone, io};
 
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::style::{Color, Style};
@@ -8,17 +8,7 @@ use rand::thread_rng;
 use random_word::Lang;
 
 use crate::options::{Language,TestType};
-// #[derive(Clone)]
-// pub enum Language {
-//     De,
-//     En,
-// }
-// pub enum TestType {
-//     RandomWords,
-//     Quotes,
-// }
 
-const WORDS_AMOUNT: u16 = 15;
 
 pub struct TypingTest {
     language: Language,
@@ -29,11 +19,12 @@ pub struct TypingTest {
     pub index: usize,
     pub mistakes: usize,
     pub total_chars: usize,
+    pub total_words: usize,
     pub text_finished: bool,
 }
 impl TypingTest {
-    pub fn new(lan: Language, test_type: TestType) -> Self {
-        let text = Self::get_random_sentence(WORDS_AMOUNT as usize, &lan); // Übergebe die Sprache als Parameter
+    pub fn new(words_amount:usize,lan: Language, test_type: TestType) -> Self {
+        let text = Self::get_random_sentence(words_amount, &lan); // Übergebe die Sprache als Parameter
 
         let colored_chars = text
             .chars()
@@ -49,6 +40,7 @@ impl TypingTest {
             index: 0,
             mistakes: 0,
             total_chars: 0,
+            total_words: words_amount,
             text_finished: false,
         }
     }
@@ -146,7 +138,7 @@ impl TypingTest {
     }
 
     pub fn reset(&mut self) {
-        let new_test = TypingTest::new(self.language.clone(), self.test_type.clone());
+        let new_test = TypingTest::new(self.total_words.clone(),self.language.clone(), self.test_type.clone());
         *self = new_test;
     }
 }

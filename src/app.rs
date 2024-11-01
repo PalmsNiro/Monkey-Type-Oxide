@@ -1,8 +1,5 @@
 use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::{
-    prelude::Backend,
-    Terminal,
-};
+use ratatui::{prelude::Backend, Terminal};
 use std::{io, process};
 
 use crate::{options::Options, type_test::TypingTest, ui::draw_ui};
@@ -24,14 +21,18 @@ impl App {
         let opt = Options::new();
         Self {
             options: opt.clone(),
-            typing_test: TypingTest::new(opt.test_language.clone(), opt.test_type.clone()),
+            typing_test: TypingTest::new(
+                opt.words_amount.clone() as usize,
+                opt.test_language.clone(),
+                opt.test_type.clone(),
+            ),
             state: AppState::StartScreen,
         }
     }
 
     fn reset(&mut self) {
-        self.typing_test.reset();  // Reset Test
-        self.state = AppState::StartScreen;  // Reset App-State
+        self.typing_test.reset(); // Reset Test
+        self.state = AppState::StartScreen; // Reset App-State
     }
 
     fn handle_key_event(&mut self) -> Result<(), io::Error> {
