@@ -8,7 +8,7 @@ use std::{io, process};
 
 use crate::{
     game::get_random_sentence,
-    ui::{draw_typing_screen, draw_ui},
+    ui::draw_ui,
 };
 
 const WORDS_AMOUNT: u16 = 15;
