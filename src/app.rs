@@ -69,6 +69,7 @@ impl App {
                     self.typing_test.handle_key_event()?;
                     if self.typing_test.index == self.typing_test.target_text.len() {
                         self.typing_test.text_finished = true;
+                        self.typing_test.stop_timer();
                     }
                     if self.typing_test.text_finished {
                         self.state = AppState::EndScreen

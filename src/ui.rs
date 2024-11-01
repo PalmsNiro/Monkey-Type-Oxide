@@ -22,7 +22,7 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
 
     //Infotext anzeige
     let info_text = format!(
-        "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Genauigkeit: {:.2}%, Fortschritt:{}",
+        "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Genauigkeit: {:.2}%, ",
         typing_test.mistakes,
         typing_test.index,
         typing_test
@@ -31,7 +31,6 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
             .nth(typing_test.index)
             .unwrap_or(' '),
         typing_test.accuracy(),
-        typing_test.progress()
     );
 
     let info =
@@ -63,12 +62,32 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
 pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(5)])
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+        ])
         .split(frame.area());
 
-    let accuracy_text = format!("Accuracy: {}", typing_test.accuracy().to_string());
+    let accuracy_text = format!("Accuracy: {:.2}", typing_test.accuracy());
     let accuracy_info = Paragraph::new(accuracy_text).alignment(Alignment::Center);
     frame.render_widget(accuracy_info, chunks[0]);
+
+    let elapsed = typing_test.get_elapsed_time();
+    let seconds = elapsed.as_secs() % 60;
+    let minutes = (elapsed.as_secs() / 60) % 60;
+    let time_wpm_text = format!(
+        "You needed {}:{:02} minutes and got {:.1} WPM",
+        minutes,
+        seconds,
+        typing_test.get_wpm()
+    );
+    let time_wpm_info = Paragraph::new(time_wpm_text).alignment(Alignment::Center);
+    frame.render_widget(time_wpm_info, chunks[1]);
+
+    let error_text = format!("Mistakes: {} out of {} total characters", typing_test.mistakes,  typing_test.target_text.len());
+    let error_info = Paragraph::new(error_text).alignment(Alignment::Center);
+    frame.render_widget(error_info, chunks[2]);
 }
 
 pub fn draw_ui(frame: &mut Frame, typing_test: &TypingTest, state: &AppState) {

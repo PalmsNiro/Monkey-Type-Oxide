@@ -1,4 +1,7 @@
-use std::{clone, io};
+use std::{
+    clone, io,
+    time::{Duration, Instant},
+};
 
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::style::{Color, Style};
@@ -7,8 +10,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use random_word::Lang;
 
-use crate::options::{Language,TestType};
-
+use crate::options::{Language, TestType};
 
 pub struct TypingTest {
     language: Language,
@@ -18,14 +20,15 @@ pub struct TypingTest {
     pub user_input: String,
     pub index: usize,
     pub mistakes: usize,
-    pub total_chars: usize,
+    pub total_chars_tipped: usize,
     pub total_words: usize,
     pub text_finished: bool,
+    pub start_time: Option<Instant>, // Zeitpunkt wenn Test startet
+    pub end_time: Option<Instant>,   // Zeitpunkt wenn Test endet
 }
 impl TypingTest {
-    pub fn new(words_amount:usize,lan: Language, test_type: TestType) -> Self {
+    pub fn new(words_amount: usize, lan: Language, test_type: TestType) -> Self {
         let text = Self::get_random_sentence(words_amount, &lan); // Übergebe die Sprache als Parameter
-
         let colored_chars = text
             .chars()
             .map(|c| (c, Style::default().fg(Color::DarkGray)))
@@ -39,9 +42,11 @@ impl TypingTest {
             user_input: String::new(),
             index: 0,
             mistakes: 0,
-            total_chars: 0,
+            total_chars_tipped: 0,
             total_words: words_amount,
             text_finished: false,
+            start_time: None,
+            end_time: None,
         }
     }
 
@@ -93,8 +98,13 @@ impl TypingTest {
 
     fn type_char(&mut self, c: char) {
         if let Some(target_char) = self.target_text.chars().nth(self.index) {
+            //start timer
+            if self.index == 0 {
+                self.start_timer();
+            }
+
             self.user_input.push(c);
-            self.total_chars += 1; // Inkrementierung der Gesamtanzahl der getippten Zeichen
+            self.total_chars_tipped += 1; // Inkrementierung der Gesamtanzahl der getippten Zeichen
             if c == target_char {
                 if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
                     *style = Style::default().fg(Color::Green);
@@ -122,10 +132,10 @@ impl TypingTest {
     }
 
     pub fn accuracy(&self) -> f64 {
-        if self.total_chars == 0 {
+        if self.total_chars_tipped == 0 {
             100.0
         } else {
-            ((self.total_chars - self.mistakes) as f64 / self.total_chars as f64) * 100.0
+            ((self.total_chars_tipped - self.mistakes) as f64 / self.total_chars_tipped as f64) * 100.0
         }
     }
 
@@ -138,7 +148,42 @@ impl TypingTest {
     }
 
     pub fn reset(&mut self) {
-        let new_test = TypingTest::new(self.total_words.clone(),self.language.clone(), self.test_type.clone());
+        let new_test = TypingTest::new(
+            self.total_words.clone(),
+            self.language.clone(),
+            self.test_type.clone(),
+        );
         *self = new_test;
+    }
+
+    pub fn start_timer(&mut self) {
+        if self.start_time.is_none() {
+            self.start_time = Some(Instant::now());
+        }
+    }
+
+    pub fn stop_timer(&mut self) {
+        if self.end_time.is_none() {
+            self.end_time = Some(Instant::now());
+        }
+    }
+
+    pub fn get_elapsed_time(&self) -> Duration {
+        match (self.start_time, self.end_time) {
+            (Some(start), Some(end)) => end - start,
+            (Some(start), None) => Instant::now() - start,
+            _ => Duration::from_secs(0),
+        }
+    }
+
+    pub fn get_wpm(&self) -> f64 {
+        let elapsed_seconds = self.get_elapsed_time().as_secs_f64();
+        if elapsed_seconds == 0.0 {
+            return 0.0;
+        }
+
+        // Standardmäßig wird ein Wort als 5 Zeichen definiert
+        let words = self.index as f64 / 5.0;
+        (words * 60.0) / elapsed_seconds
     }
 }
