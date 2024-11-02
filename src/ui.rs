@@ -63,6 +63,7 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
         .constraints([
             Constraint::Length(3),
             Constraint::Length(3),
+            Constraint::Length(4),
             Constraint::Length(3),
         ])
         .split(frame.area());
@@ -74,14 +75,17 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let elapsed = typing_test.get_elapsed_time();
     let seconds = elapsed.as_secs() % 60;
     let minutes = (elapsed.as_secs() / 60) % 60;
-    let time_wpm_text = format!(
-        "You needed {}:{:02} minutes and got {:.1} WPM",
+    let time_text = format!(
+        "You needed {}:{:02} minutes",
         minutes,
         seconds,
-        typing_test.get_wpm()
     );
-    let time_wpm_info = Paragraph::new(time_wpm_text).alignment(Alignment::Center);
-    frame.render_widget(time_wpm_info, chunks[1]);
+    let time_info = Paragraph::new(time_text).alignment(Alignment::Center);
+    frame.render_widget(time_info, chunks[1]);
+
+    let wpm_text = format!("Wpm: {:.1} \n Wpm raw: {:.1}", typing_test.get_wpm(), typing_test.get_wpm_raw());
+    let wpm_info = Paragraph::new(wpm_text).alignment(Alignment::Center);
+    frame.render_widget(wpm_info, chunks[2]);
 
     let error_text = format!(
         "Mistakes: {} out of {} total characters",
@@ -89,7 +93,7 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
         typing_test.target_text.len()
     );
     let error_info = Paragraph::new(error_text).alignment(Alignment::Center);
-    frame.render_widget(error_info, chunks[2]);
+    frame.render_widget(error_info, chunks[3]);
 }
 
 pub fn draw_ui(frame: &mut Frame, typing_test: &TypingTest, state: &AppState) {

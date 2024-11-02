@@ -25,6 +25,8 @@ pub struct TypingTest {
     pub text_finished: bool,
     pub start_time: Option<Instant>,
     pub end_time: Option<Instant>,
+    pub correct_words_chars: i32,
+    last_word_start: usize,
 }
 impl TypingTest {
     pub fn new(words_amount: usize, lan: Language, test_type: TestType) -> Self {
@@ -47,6 +49,8 @@ impl TypingTest {
             text_finished: false,
             start_time: None,
             end_time: None,
+            correct_words_chars: 0,
+            last_word_start: 0,
         }
     }
 
@@ -104,16 +108,59 @@ impl TypingTest {
 
             self.user_input.push(c);
             self.total_chars_tipped += 1;
-            if c == target_char {
-                if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
-                    *style = Style::default().fg(Color::Green);
-                }
-            } else {
-                if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
-                    *style = Style::default().fg(Color::Red);
-                }
+
+            let is_current_char_correct = c == target_char;
+
+            // if c == target_char {
+            //     if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
+            //         *style = Style::default().fg(Color::Green);
+            //     }
+            // } else {
+            //     if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
+            //         *style = Style::default().fg(Color::Red);
+            //     }
+            //     self.mistakes += 1;
+            // }
+            // self.index += 1;
+            if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
+                *style = if is_current_char_correct {
+                    Style::default().fg(Color::Green)
+                } else {
+                    Style::default().fg(Color::Red)
+                };
+            }
+
+            if !is_current_char_correct {
                 self.mistakes += 1;
             }
+
+            // Wenn ein Leerzeichen korrekt getippt wurde
+            if target_char == ' ' && is_current_char_correct {
+                self.correct_words_chars += 1; // Zähle das Leerzeichen
+            }
+
+            // Prüfe ob wir am Ende eines Wortes sind (Leerzeichen oder Ende des Textes)
+            let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
+
+            if is_word_end {
+                // Prüfe ob das komplette Wort korrekt war
+                let word_end = if target_char == ' ' {
+                    self.index - 1
+                } else {
+                    self.index
+                };
+                let word_correct = self.target_text[self.last_word_start..=word_end]
+                    == self.user_input[self.last_word_start..=word_end];
+
+                if word_correct {
+                    // Füge nur die Länge des Wortes (ohne Leerzeichen) zum Counter hinzu
+                    self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
+                }
+
+                // Setze den Start für das nächste Wort
+                self.last_word_start = self.index + 1;
+            }
+
             self.index += 1;
         }
     }
@@ -176,7 +223,19 @@ impl TypingTest {
         }
     }
 
+    // total number of characters in the correctly typed words (including spaces), divided by 5 and normalised to 60 seconds.
     pub fn get_wpm(&self) -> f64 {
+        let elapsed_seconds = self.get_elapsed_time().as_secs_f64();
+        if elapsed_seconds == 0.0 {
+            return 0.0;
+        }
+
+        let words = self.correct_words_chars as f64 / 5.0;
+        (words * 60.0) / elapsed_seconds
+    }
+
+    // calculated just like wpm, but also includes incorrect words.
+    pub fn get_wpm_raw(&self) -> f64 {
         let elapsed_seconds = self.get_elapsed_time().as_secs_f64();
         if elapsed_seconds == 0.0 {
             return 0.0;
