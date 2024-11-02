@@ -111,17 +111,6 @@ impl TypingTest {
 
             let is_current_char_correct = c == target_char;
 
-            // if c == target_char {
-            //     if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
-            //         *style = Style::default().fg(Color::Green);
-            //     }
-            // } else {
-            //     if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
-            //         *style = Style::default().fg(Color::Red);
-            //     }
-            //     self.mistakes += 1;
-            // }
-            // self.index += 1;
             if let Some((_, style)) = self.colored_chars.get_mut(self.index) {
                 *style = if is_current_char_correct {
                     Style::default().fg(Color::Green)
@@ -134,16 +123,16 @@ impl TypingTest {
                 self.mistakes += 1;
             }
 
-            // Wenn ein Leerzeichen korrekt getippt wurde
+            // if whitepsace is correct
             if target_char == ' ' && is_current_char_correct {
-                self.correct_words_chars += 1; // Zähle das Leerzeichen
+                self.correct_words_chars += 1;
             }
 
-            // Prüfe ob wir am Ende eines Wortes sind (Leerzeichen oder Ende des Textes)
+            // Check if end of word reached (whitespace or end of text)
             let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
 
             if is_word_end {
-                // Prüfe ob das komplette Wort korrekt war
+                // check if whole word was correct
                 let word_end = if target_char == ' ' {
                     self.index - 1
                 } else {
@@ -153,11 +142,11 @@ impl TypingTest {
                     == self.user_input[self.last_word_start..=word_end];
 
                 if word_correct {
-                    // Füge nur die Länge des Wortes (ohne Leerzeichen) zum Counter hinzu
+                    // Add lenght of word to counter
                     self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
                 }
 
-                // Setze den Start für das nächste Wort
+                // set start for next words
                 self.last_word_start = self.index + 1;
             }
 
