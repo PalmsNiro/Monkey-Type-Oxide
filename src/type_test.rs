@@ -123,37 +123,41 @@ impl TypingTest {
                 self.mistakes += 1;
             }
 
-            // if whitepsace is correct
-            if target_char == ' ' && is_current_char_correct {
-                self.correct_words_chars += 1;
-            }
-
-            // Check if end of word reached (whitespace or end of text)
-            let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
-
-            if is_word_end {
-                // check if whole word was correct
-                let word_end = if target_char == ' ' {
-                    self.index - 1
-                } else {
-                    self.index
-                };
-                let word_correct = self.target_text[self.last_word_start..=word_end]
-                    == self.user_input[self.last_word_start..=word_end];
-
-                if word_correct {
-                    // Add lenght of word to counter
-                    self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
-                }
-
-                // set start for next words
-                self.last_word_start = self.index + 1;
-            }
-
-            self.index += 1;
+            self.check_for_correct_word(target_char, is_current_char_correct);
         }
     }
 
+    fn check_for_correct_word(&mut self, target_char: char, is_current_char_correct: bool) {
+        // if whitepsace is correct (also counts as word)
+        if target_char == ' ' && is_current_char_correct {
+            self.correct_words_chars += 1;
+        }
+    
+        // Check if end of word reached (whitespace or end of text)
+        let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
+    
+        if is_word_end {
+            // check if whole word was correct
+            let word_end = if target_char == ' ' {
+                self.index - 1
+            } else {
+                self.index
+            };
+            let word_correct = self.target_text[self.last_word_start..=word_end]
+                == self.user_input[self.last_word_start..=word_end];
+    
+            if word_correct {
+                // Add lenght of word to counter
+                self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
+            }
+    
+            // set start for next words
+            self.last_word_start = self.index + 1;
+        }
+    
+        self.index += 1;
+    }
+    
     fn backspace(&mut self) {
         if !self.user_input.is_empty() {
             self.user_input.pop();
