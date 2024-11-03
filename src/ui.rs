@@ -1,13 +1,17 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
+    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, Paragraph},
+    widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, GraphType, Paragraph},
     Frame,
 };
 use textwrap::{wrap, Options, WordSplitter};
 
-use crate::{app::AppState, type_test::TypingTest};
+use crate::{
+    app::AppState,
+    type_test::{TestDataPerSecond, TypingTest},
+};
 
 pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
@@ -61,32 +65,37 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
+            Constraint::Length(2),
+            Constraint::Length(2),
             Constraint::Length(3),
-            Constraint::Length(3),
-            Constraint::Length(4),
-            Constraint::Length(3),
+            Constraint::Length(2),
+            Constraint::Length(50),
         ])
         .split(frame.area());
 
+    //accuracy
     let accuracy_text = format!("Accuracy: {:.2}", typing_test.accuracy());
     let accuracy_info = Paragraph::new(accuracy_text).alignment(Alignment::Center);
     frame.render_widget(accuracy_info, chunks[0]);
 
+    //time
     let elapsed = typing_test.get_elapsed_time();
     let seconds = elapsed.as_secs() % 60;
     let minutes = (elapsed.as_secs() / 60) % 60;
-    let time_text = format!(
-        "You needed {}:{:02} minutes",
-        minutes,
-        seconds,
-    );
+    let time_text = format!("You needed {}:{:02} minutes", minutes, seconds,);
     let time_info = Paragraph::new(time_text).alignment(Alignment::Center);
     frame.render_widget(time_info, chunks[1]);
 
-    let wpm_text = format!("Wpm: {:.1} \n Wpm raw: {:.1}", typing_test.get_wpm(), typing_test.get_wpm_raw());
+    //wpm
+    let wpm_text = format!(
+        "Wpm: {:.1} \n Wpm raw: {:.1}",
+        typing_test.get_wpm(),
+        typing_test.get_wpm_raw()
+    );
     let wpm_info = Paragraph::new(wpm_text).alignment(Alignment::Center);
     frame.render_widget(wpm_info, chunks[2]);
 
+    //errors
     let error_text = format!(
         "Mistakes: {} out of {} total characters",
         typing_test.mistakes,
@@ -94,6 +103,22 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     );
     let error_info = Paragraph::new(error_text).alignment(Alignment::Center);
     frame.render_widget(error_info, chunks[3]);
+
+    //chart
+    let wpm_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm))
+        .collect();
+
+    let wpm_raw_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm_raw))
+        .collect();
+
+    let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
+    frame.render_widget(chart, chunks[4]);
 }
 
 pub fn draw_ui(frame: &mut Frame, typing_test: &TypingTest, state: &AppState) {
@@ -153,4 +178,43 @@ fn create_colored_text<'a>(
     }
 
     colored_text
+}
+
+fn create_chart<'a>(
+    test_data_history: &'a [TestDataPerSecond],
+    wpm_points: &'a [(f64, f64)],
+    wpm_raw_points: &'a [(f64, f64)],
+) -> Chart<'a> {
+    let wpm_dataset = Dataset::default()
+        .name("WPM")
+        .marker(symbols::Marker::Dot)
+        .style(Style::default().fg(Color::Cyan))
+        .graph_type(GraphType::Line)
+        .data(wpm_points);
+
+    let wpm_raw_dataset = Dataset::default()
+        .name("Raw WPM")
+        .marker(symbols::Marker::Braille)
+        .style(Style::default().fg(Color::Yellow))
+        .graph_type(GraphType::Line)
+        .data(wpm_raw_points);
+
+    Chart::new(vec![wpm_dataset, wpm_raw_dataset])
+        .block(Block::bordered().title("Typing Speed"))
+        .x_axis(
+            Axis::default()
+                .title("Time (s)")
+                .bounds([0.0, test_data_history.len() as f64])
+                .labels(vec![
+                    Span::from("0"),
+                    Span::from(format!("{}", test_data_history.len() / 2)),
+                    Span::from(format!("{}", test_data_history.len())),
+                ]),
+        )
+        .y_axis(
+            Axis::default()
+                .title("Words Per Minute")
+                .bounds([0.0, 100.0])
+                .labels(vec![Span::from("0"), Span::from("50"), Span::from("100")]),
+        )
 }

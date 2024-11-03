@@ -12,6 +12,14 @@ use random_word::Lang;
 
 use crate::options::{Language, TestType};
 
+#[derive(Clone)]
+pub struct TestDataPerSecond {
+    pub mistakes: usize,
+    pub wpm: f64,
+    pub wpm_raw: f64,
+    pub timestamp: u64, // Second of measurement
+}
+
 pub struct TypingTest {
     language: Language,
     test_type: TestType,
@@ -27,6 +35,9 @@ pub struct TypingTest {
     pub end_time: Option<Instant>,
     pub correct_words_chars: i32,
     last_word_start: usize,
+    pub test_data_history: Vec<TestDataPerSecond>,
+    last_test_data_update: Option<Instant>,
+    mistakes_in_current_second: usize,
 }
 impl TypingTest {
     pub fn new(words_amount: usize, lan: Language, test_type: TestType) -> Self {
@@ -51,6 +62,9 @@ impl TypingTest {
             end_time: None,
             correct_words_chars: 0,
             last_word_start: 0,
+            test_data_history: Vec::new(),
+            last_test_data_update: None,
+            mistakes_in_current_second: 0,
         }
     }
 
@@ -121,9 +135,11 @@ impl TypingTest {
 
             if !is_current_char_correct {
                 self.mistakes += 1;
+                self.mistakes_in_current_second += 1;
             }
 
             self.check_for_correct_word(target_char, is_current_char_correct);
+            self.update_test_data();
         }
     }
 
@@ -132,10 +148,10 @@ impl TypingTest {
         if target_char == ' ' && is_current_char_correct {
             self.correct_words_chars += 1;
         }
-    
+
         // Check if end of word reached (whitespace or end of text)
         let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
-    
+
         if is_word_end {
             // check if whole word was correct
             let word_end = if target_char == ' ' {
@@ -145,19 +161,19 @@ impl TypingTest {
             };
             let word_correct = self.target_text[self.last_word_start..=word_end]
                 == self.user_input[self.last_word_start..=word_end];
-    
+
             if word_correct {
                 // Add lenght of word to counter
                 self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
             }
-    
+
             // set start for next words
             self.last_word_start = self.index + 1;
         }
-    
+
         self.index += 1;
     }
-    
+
     fn backspace(&mut self) {
         if !self.user_input.is_empty() {
             self.user_input.pop();
@@ -236,5 +252,36 @@ impl TypingTest {
 
         let words = self.index as f64 / 5.0; //Standart definiton of len for a word is 5
         (words * 60.0) / elapsed_seconds
+    }
+
+    fn update_test_data(&mut self) {
+        let current_time = self.get_elapsed_time();
+        let current_second = current_time.as_secs();
+
+        // Check if new Seconds has begun
+        if self.last_test_data_update.map_or(true, |last| {
+            current_time.as_secs() > last.elapsed().as_secs()
+        }) {
+            let metrics = TestDataPerSecond {
+                mistakes: self.mistakes_in_current_second,
+                wpm: self.get_wpm(),
+                wpm_raw: self.get_wpm_raw(),
+                timestamp: current_second,
+            };
+
+            self.test_data_history.push(metrics);
+            self.mistakes_in_current_second = 0;
+            self.last_test_data_update = Some(Instant::now());
+        }
+    }
+
+    pub fn get_test_data_for_second(&self, second: u64) -> Option<&TestDataPerSecond> {
+        self.test_data_history
+            .iter()
+            .find(|metrics| metrics.timestamp == second)
+    }
+
+    pub fn get_all_test_data(&self) -> &[TestDataPerSecond] {
+        &self.test_data_history
     }
 }
