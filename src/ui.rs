@@ -186,9 +186,25 @@ fn create_chart<'a>(
     wpm_points: &'a [(f64, f64)],
     wpm_raw_points: &'a [(f64, f64)],
 ) -> Chart<'a> {
+    //get the maximum of the y values
+
+    // Iterator for y-Values
+    let max_y_points = wpm_points
+        .iter()
+        .map(|&(_, y)| y)
+        .fold(f64::NEG_INFINITY, f64::max);
+
+    let max_y_raw_points = wpm_raw_points
+        .iter()
+        .map(|&(_, y)| y)
+        .fold(f64::NEG_INFINITY, f64::max);
+
+    // compare maxima
+    let max_y = max_y_points.max(max_y_raw_points);
+
     let wpm_dataset = Dataset::default()
         .name("WPM")
-        .marker(symbols::Marker::Dot)
+        .marker(symbols::Marker::Braille)
         .style(Style::default().fg(Color::Cyan))
         .graph_type(GraphType::Line)
         .data(wpm_points);
@@ -201,7 +217,7 @@ fn create_chart<'a>(
         .data(wpm_raw_points);
 
     Chart::new(vec![wpm_dataset, wpm_raw_dataset])
-        .block(Block::bordered().title("Typing Speed"))
+        .block(Block::bordered().title("WPM"))
         .x_axis(
             Axis::default()
                 .title("Time (s)")
@@ -215,7 +231,11 @@ fn create_chart<'a>(
         .y_axis(
             Axis::default()
                 .title("Words Per Minute")
-                .bounds([0.0, 100.0])
-                .labels(vec![Span::from("0"), Span::from("50"), Span::from("100")]),
+                .bounds([0.0, max_y + 10.0])
+                .labels(vec![
+                    Span::from("0"),
+                    Span::from(format!("{}", ((max_y + 10.0) / 2.0) as u32)),
+                    Span::from(format!("{}", (max_y + 10.0) as u32)),
+                ]),
         )
 }

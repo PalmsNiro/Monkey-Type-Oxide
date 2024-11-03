@@ -139,7 +139,7 @@ impl TypingTest {
             }
 
             self.check_for_correct_word(target_char, is_current_char_correct);
-            self.update_test_data();
+            // self.update_test_data();
         }
     }
 
@@ -153,21 +153,37 @@ impl TypingTest {
         let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
 
         if is_word_end {
-            // check if whole word was correct
             let word_end = if target_char == ' ' {
                 self.index - 1
             } else {
                 self.index
             };
-            let word_correct = self.target_text[self.last_word_start..=word_end]
-                == self.user_input[self.last_word_start..=word_end];
+
+            // Find char boundaries
+            let start_char = self
+                .target_text
+                .char_indices()
+                .map(|(i, _)| i)
+                .find(|&i| i >= self.last_word_start)
+                .unwrap_or(self.last_word_start);
+
+            let end_char = self
+                .target_text
+                .char_indices()
+                .map(|(i, _)| i)
+                .find(|&i| i > word_end)
+                .unwrap_or(self.target_text.len());
+
+            // Compare chars at correct char boundaries
+            let word_correct =
+                self.target_text[start_char..end_char] == self.user_input[start_char..end_char];
 
             if word_correct {
-                // Add lenght of word to counter
-                self.correct_words_chars += (word_end - self.last_word_start + 1) as i32;
+                // Count chars and add to correc_words_chars
+                self.correct_words_chars +=
+                    self.target_text[start_char..end_char].chars().count() as i32;
             }
 
-            // set start for next words
             self.last_word_start = self.index + 1;
         }
 
@@ -254,24 +270,20 @@ impl TypingTest {
         (words * 60.0) / elapsed_seconds
     }
 
-    fn update_test_data(&mut self) {
-        let current_time = self.get_elapsed_time();
-        let current_second = current_time.as_secs();
-
-        // Check if new Seconds has begun
-        if self.last_test_data_update.map_or(true, |last| {
-            current_time.as_secs() > last.elapsed().as_secs()
-        }) {
-            let metrics = TestDataPerSecond {
-                mistakes: self.mistakes_in_current_second,
-                wpm: self.get_wpm(),
-                wpm_raw: self.get_wpm_raw(),
-                timestamp: current_second,
-            };
-
-            self.test_data_history.push(metrics);
-            self.mistakes_in_current_second = 0;
-            self.last_test_data_update = Some(Instant::now());
+    pub fn update_test_data(&mut self) {
+        if self.start_time.is_some() {  // Nur updaten wenn der Test läuft
+            let current_second = self.get_elapsed_time().as_secs() as u64;
+            
+            // Prüfe ob wir bereits einen Eintrag für diese Sekunde haben
+            if !self.test_data_history.iter().any(|data| data.timestamp == current_second) {
+                let new_data = TestDataPerSecond {
+                    timestamp: current_second,
+                    wpm: self.get_wpm(),
+                    wpm_raw: self.get_wpm_raw(),
+                    mistakes: self.mistakes,
+                };
+                self.test_data_history.push(new_data);
+            }
         }
     }
 
