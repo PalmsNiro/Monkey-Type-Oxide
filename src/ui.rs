@@ -26,7 +26,7 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
 
     //Infotext
     let info_text = format!(
-        "Fehler: {}, Aktueller Index: {}, Zeichen: {}, Genauigkeit: {:.2}%, test_data size: {}",
+        "Mistakes: {}, Current Index: {}, Char: {}, Accuracy: {:.2}%, test_data size: {}",
         typing_test.mistakes,
         typing_test.index,
         typing_test

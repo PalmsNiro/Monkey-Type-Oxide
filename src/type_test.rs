@@ -4,6 +4,7 @@ use std::{
 };
 
 use crossterm::event::{self, KeyCode, KeyEventKind};
+use log::error;
 use ratatui::style::{Color, Style};
 
 use rand::seq::SliceRandom;
@@ -81,10 +82,10 @@ impl TypingTest {
             .collect();
 
         let sentence = selected_words.join(" ");
-        let capitalized =
-            sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..];
+        // let capitalized =
+        //     sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..];
 
-        capitalized
+        sentence
             .replace("ä", "ae")
             .replace("ö", "oe")
             .replace("ü", "ue")
@@ -142,7 +143,7 @@ impl TypingTest {
     }
 
     fn check_for_correct_word(&mut self, target_char: char, is_current_char_correct: bool) {
-        // if whitepsace is correct (also counts as word)
+        // if whitespace is correct (also counts as word)
         if target_char == ' ' && is_current_char_correct {
             self.correct_words_chars += 1;
         }
@@ -151,41 +152,72 @@ impl TypingTest {
         let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
 
         if is_word_end {
-            let word_end = if target_char == ' ' {
-                self.index - 1
-            } else {
-                self.index
-            };
+            // Sicherheitscheck für Indizes
+            if self.last_word_start > self.index {
+                error!("Warning: Invalid word boundaries. Resetting word start.");
+                self.last_word_start = self.index;
+            }
 
-            // Find char boundaries
-            let start_char = self
-                .target_text
-                .char_indices()
-                .map(|(i, _)| i)
-                .find(|&i| i >= self.last_word_start)
-                .unwrap_or(self.last_word_start);
+            // Safe extraction
+            let target_word =
+                match self.safe_extract_word(&self.target_text, self.last_word_start, self.index) {
+                    Ok(word) => word,
+                    Err(e) => {
+                        error!("Warning: Could not extract target word: {}", e);
+                        String::new()
+                    }
+                };
 
-            let end_char = self
-                .target_text
-                .char_indices()
-                .map(|(i, _)| i)
-                .find(|&i| i > word_end)
-                .unwrap_or(self.target_text.len());
+            let user_word =
+                match self.safe_extract_word(&self.user_input, self.last_word_start, self.index) {
+                    Ok(word) => word,
+                    Err(e) => {
+                        error!("Warning: Could not extract user word: {}", e);
+                        String::new()
+                    }
+                };
 
-            // Compare chars at correct char boundaries
-            let word_correct =
-                self.target_text[start_char..end_char] == self.user_input[start_char..end_char];
+            // Compare Words
+            let word_correct = target_word == user_word;
 
             if word_correct {
-                // Count chars and add to correc_words_chars
-                self.correct_words_chars +=
-                    self.target_text[start_char..end_char].chars().count() as i32;
+                self.correct_words_chars += target_word.chars().count() as i32;
             }
 
             self.last_word_start = self.index + 1;
         }
 
         self.index += 1;
+    }
+
+    fn safe_extract_word(&self, text: &str, start: usize, end: usize) -> Result<String, String> {
+        if start > end {
+            return Err("Start index greater than end index".to_string());
+        }
+        if start >= text.len() {
+            return Err("Start index out of bounds".to_string());
+        }
+
+        // Find safe Char-Border
+        let safe_start = text
+            .char_indices()
+            .find(|(i, _)| *i >= start)
+            .map(|(i, _)| i)
+            .unwrap_or(start);
+
+        let safe_end = std::cmp::min(
+            text.char_indices()
+                .find(|(i, _)| *i > end)
+                .map(|(i, _)| i)
+                .unwrap_or(text.len()),
+            text.len(),
+        );
+
+        // Safe Extraction of string slice
+        match text.get(safe_start..safe_end) {
+            Some(slice) => Ok(slice.to_string()),
+            None => Err("Could not extract word slice".to_string()),
+        }
     }
 
     fn backspace(&mut self) {
@@ -269,14 +301,16 @@ impl TypingTest {
     }
 
     pub fn update_test_data(&mut self) {
-        if self.start_time.is_some() {  // Only update if test runnning
+        if self.start_time.is_some() {
+            // Only update if test runnning
             let current_second = self.get_elapsed_time().as_secs() as u64;
 
-            let last_recorded = self.test_data_history
+            let last_recorded = self
+                .test_data_history
                 .last()
                 .map(|data| data.timestamp)
                 .unwrap_or(0);
-            
+
             // Check if entry for this second already exists
             if self.test_data_history.is_empty() {
                 let initial_data = TestDataPerSecond {
@@ -298,7 +332,6 @@ impl TypingTest {
                 };
                 self.test_data_history.push(fill_data);
             }
-
         }
     }
 
