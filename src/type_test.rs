@@ -36,7 +36,6 @@ pub struct TypingTest {
     pub correct_words_chars: i32,
     last_word_start: usize,
     pub test_data_history: Vec<TestDataPerSecond>,
-    last_test_data_update: Option<Instant>,
     mistakes_in_current_second: usize,
 }
 impl TypingTest {
@@ -63,7 +62,6 @@ impl TypingTest {
             correct_words_chars: 0,
             last_word_start: 0,
             test_data_history: Vec::new(),
-            last_test_data_update: None,
             mistakes_in_current_second: 0,
         }
     }
@@ -271,19 +269,36 @@ impl TypingTest {
     }
 
     pub fn update_test_data(&mut self) {
-        if self.start_time.is_some() {  // Nur updaten wenn der Test läuft
+        if self.start_time.is_some() {  // Only update if test runnning
             let current_second = self.get_elapsed_time().as_secs() as u64;
+
+            let last_recorded = self.test_data_history
+                .last()
+                .map(|data| data.timestamp)
+                .unwrap_or(0);
             
-            // Prüfe ob wir bereits einen Eintrag für diese Sekunde haben
-            if !self.test_data_history.iter().any(|data| data.timestamp == current_second) {
-                let new_data = TestDataPerSecond {
-                    timestamp: current_second,
+            // Check if entry for this second already exists
+            if self.test_data_history.is_empty() {
+                let initial_data = TestDataPerSecond {
+                    timestamp: 0,
                     wpm: self.get_wpm(),
                     wpm_raw: self.get_wpm_raw(),
                     mistakes: self.mistakes,
                 };
-                self.test_data_history.push(new_data);
+                self.test_data_history.push(initial_data);
             }
+
+            // Fill all missing seconds
+            for sec in (last_recorded + 1)..=current_second {
+                let fill_data = TestDataPerSecond {
+                    timestamp: sec,
+                    wpm: self.get_wpm(),
+                    wpm_raw: self.get_wpm_raw(),
+                    mistakes: self.mistakes,
+                };
+                self.test_data_history.push(fill_data);
+            }
+
         }
     }
 

@@ -1,8 +1,15 @@
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{prelude::Backend, Terminal};
-use std::{io, process, time::Instant};
+use std::{
+    io, process, thread,
+    time::{Duration, Instant},
+};
 
-use crate::{options::Options, type_test::TypingTest, ui::draw_ui};
+use crate::{
+    options::Options,
+    type_test::{TestDataPerSecond, TypingTest},
+    ui::draw_ui,
+};
 
 pub enum AppState {
     StartScreen,
@@ -14,7 +21,6 @@ pub struct App {
     pub options: Options,
     pub typing_test: TypingTest,
     pub state: AppState,
-    last_metrics_update: Option<Instant>,
 }
 
 impl App {
@@ -28,11 +34,10 @@ impl App {
                 opt.test_type.clone(),
             ),
             state: AppState::StartScreen,
-            last_metrics_update: None,
         }
     }
 
-    fn reset(&mut self) {
+    fn start_new_test(&mut self) {
         self.typing_test.reset(); // Reset Test
         self.state = AppState::StartScreen; // Reset App-State
     }
@@ -43,7 +48,7 @@ impl App {
                 match key.code {
                     KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
                         if c == 'r' || c == 'R' {
-                            self.reset();
+                            self.start_new_test();
                         }
                         if c == 'q' || c == 'Q' {
                             process::exit(0);
@@ -57,36 +62,37 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        let mut last_update = Instant::now();
+        let update_interval = Duration::from_secs(1);
+
         loop {
+            let now = Instant::now();
+
+            // Update metrics every second while test is running, regardless of input(meaning also, when afk)
+            if let AppState::RunningTest = self.state {
+                if now.duration_since(last_update) >= update_interval {
+                    self.typing_test.update_test_data();
+                    last_update = now;
+                }
+            }
+
             terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
 
             match self.state {
                 AppState::StartScreen => {
                     self.typing_test.handle_key_event()?;
                     if self.typing_test.progress() > 0 {
-                        self.last_metrics_update = Some(Instant::now());
-                        self.state = AppState::RunningTest
+                        self.typing_test.update_test_data();
+                        last_update = Instant::now();
+                        self.state = AppState::RunningTest;
                     }
                 }
                 AppState::RunningTest => {
-                    // update test data
-                    let now = Instant::now();
-                    if now
-                        .duration_since(self.last_metrics_update.unwrap())
-                        .as_secs()
-                        >= 1
-                    {
-                        self.typing_test.update_test_data();
-                        self.last_metrics_update = Some(now);
-                    }
-                    // handle key events
                     self.typing_test.handle_key_event()?;
-                    // if the index is the length after a keypress we set the text finished flag tue and stop the timer
                     if self.typing_test.index == self.typing_test.target_text.len() {
                         self.typing_test.text_finished = true;
                         self.typing_test.stop_timer();
                     }
-                    // after the text is finished we transition to the endscreen
                     if self.typing_test.text_finished {
                         self.state = AppState::EndScreen
                     }
@@ -95,6 +101,9 @@ impl App {
                     self.handle_key_event()?;
                 }
             }
+
+            // Optional: Delay to reduce weight on cpu
+            // thread::sleep(Duration::from_millis(10));
         }
     }
 }

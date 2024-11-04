@@ -18,8 +18,8 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3),      // Info-Bar
-            Constraint::Percentage(40), // Goaltext
-            Constraint::Percentage(40), // Space for future use
+            Constraint::Percentage(30), // Goaltext
+            Constraint::Percentage(50), // Space for future use (chart)
             Constraint::Length(3),      // Progress-Bar
         ])
         .split(frame.area());
@@ -52,12 +52,28 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
         .block(Block::default().borders(Borders::ALL).title("Zieltext"));
     frame.render_widget(target_text, chunks[1]);
 
+    // chart
+    let wpm_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm))
+        .collect();
+
+    let wpm_raw_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm_raw))
+        .collect();
+
+    let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
+    frame.render_widget(chart, chunks[2]);
+
     // Progress Bar
     let progress = typing_test.progress();
     let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Fortschritt"))
-        .gauge_style(Style::default().fg(Color::Cyan))
-        .percent(progress);
+    .block(Block::default().borders(Borders::ALL).title("Fortschritt"))
+    .gauge_style(Style::default().fg(Color::Cyan))
+    .percent(progress);
 
     frame.render_widget(gauge, chunks[3]);
 }
@@ -186,8 +202,7 @@ fn create_chart<'a>(
     wpm_points: &'a [(f64, f64)],
     wpm_raw_points: &'a [(f64, f64)],
 ) -> Chart<'a> {
-    //get the maximum of the y values
-
+    //get the maximum out of the y values
     // Iterator for y-Values
     let max_y_points = wpm_points
         .iter()
@@ -201,6 +216,13 @@ fn create_chart<'a>(
 
     // compare maxima
     let max_y = max_y_points.max(max_y_raw_points);
+
+    // Find exact maximum time
+    let max_time = test_data_history
+        .iter()
+        .map(|data| data.timestamp)
+        .max()
+        .unwrap_or(0);
 
     let wpm_dataset = Dataset::default()
         .name("WPM")
@@ -221,11 +243,11 @@ fn create_chart<'a>(
         .x_axis(
             Axis::default()
                 .title("Time (s)")
-                .bounds([0.0, test_data_history.len() as f64])
+                .bounds([0.0, max_time as f64])
                 .labels(vec![
                     Span::from("0"),
-                    Span::from(format!("{}", test_data_history.len() / 2)),
-                    Span::from(format!("{}", test_data_history.len())),
+                    Span::from(format!("{}", max_time / 2)),
+                    Span::from(format!("{}", max_time)),
                 ]),
         )
         .y_axis(
@@ -235,7 +257,7 @@ fn create_chart<'a>(
                 .labels(vec![
                     Span::from("0"),
                     Span::from(format!("{}", ((max_y + 10.0) / 2.0) as u32)),
-                    Span::from(format!("{}", (max_y + 10.0) as u32)),
+                    Span::from(format!("{}", (max_y + 5.0) as u32)),
                 ]),
         )
 }
