@@ -2,7 +2,7 @@ mod app;
 mod ui;
 mod type_test;
 mod options;
-
+use ui::*;
 use ratatui::prelude::*;
 use std::io;
 

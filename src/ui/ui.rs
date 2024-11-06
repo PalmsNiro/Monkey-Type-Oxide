@@ -1,3 +1,5 @@
+use crate::ui;
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
