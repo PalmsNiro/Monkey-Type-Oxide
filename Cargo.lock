@@ -13,6 +13,7 @@ dependencies = [
  "rand",
  "random_word",
  "ratatui",
+ "strum",
  "terminal_size",
  "textwrap",
 ]

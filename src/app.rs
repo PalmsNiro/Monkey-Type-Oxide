@@ -1,5 +1,6 @@
-use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::{prelude::Backend, Terminal};
+use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
+use log::info;
+use ratatui::{prelude::Backend, widgets::TableState, Terminal};
 use std::{
     io, process, thread,
     time::{Duration, Instant},
@@ -11,16 +12,49 @@ use crate::{
     ui::draw_ui,
 };
 
+use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
+
+#[derive(Default, Clone)]
 pub enum AppState {
+    #[default]
     StartScreen,
     RunningTest,
     EndScreen,
+}
+
+#[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
+enum SelectedTab {
+    #[default]
+    #[strum(to_string = "Tab 1")] // start screen / test area / end screen
+    Tab1,
+    #[strum(to_string = "Tab 2")] // options
+    Tab2,
+    #[strum(to_string = "Tab 3")] // account
+    Tab3,
+    #[strum(to_string = "Tab 4")] // about
+    Tab4,
+}
+impl SelectedTab {
+    /// Get the previous tab, if there is no previous tab return the current tab.
+    fn previous(self) -> Self {
+        let current_index: usize = self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(self)
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    fn next(self) -> Self {
+        let current_index = self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(self)
+    }
 }
 
 pub struct App {
     pub options: Options,
     pub typing_test: TypingTest,
     pub state: AppState,
+    selected_tab: SelectedTab,
 }
 
 impl App {
@@ -34,6 +68,7 @@ impl App {
                 opt.test_type.clone(),
             ),
             state: AppState::StartScreen,
+            selected_tab: SelectedTab::Tab1,
         }
     }
 
@@ -44,21 +79,76 @@ impl App {
 
     fn handle_key_event(&mut self) -> Result<(), io::Error> {
         match self.state {
-            AppState::EndScreen => Ok(if let event::Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                        if c == 'r' || c == 'R' {
-                            self.start_new_test();
+            AppState::StartScreen => {
+                if let event::Event::Key(key) = event::read()? {
+                    match key.code {
+                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                            self.typing_test.type_char(c)
                         }
-                        if c == 'q' || c == 'Q' {
-                            process::exit(0);
-                        }
+                        KeyCode::Esc => process::exit(0),
+                        _ => {}
                     }
-                    _ => {}
+                    match key.modifiers {
+                        KeyModifiers::CONTROL => {
+                            if key.kind == KeyEventKind::Press{
+                                if key.code == KeyCode::Char('q') {process::exit(0)};
+                                if key.code == KeyCode::Char('l') {self.next_tab();};
+                                if key.code == KeyCode::Char('h') {self.previous_tab();};
+                            }
+                        }
+                        _ => {}
+                    }
                 }
-            }),
-            _ => Ok(()),
+                Ok(())
+            }
+            AppState::RunningTest => {
+                if let event::Event::Key(key) = event::read()? {
+                    match key.code {
+                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                            self.typing_test.type_char(c)
+                        }
+                        KeyCode::Backspace => self.typing_test.backspace(),
+                        KeyCode::Esc => process::exit(0),
+                        _ => {}
+                    }
+                    match key.modifiers {
+                        KeyModifiers::CONTROL
+                            if (key.code == KeyCode::Char('q')
+                                && key.kind == KeyEventKind::Press) =>
+                        {
+                            process::exit(0)
+                        }
+                        _ => {}
+                    }
+                }
+                Ok(())
+            }
+            AppState::EndScreen => {
+                if let event::Event::Key(key) = event::read()? {
+                    match key.code {
+                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
+                            if c == 'r' || c == 'R' {
+                                self.start_new_test();
+                            }
+                            if c == 'q' || c == 'Q' {
+                                process::exit(0);
+                            }
+                        }
+                        KeyCode::Esc => process::exit(0),
+                        _ => {}
+                    }
+                }
+                Ok(())
+            }
         }
+    }
+
+    pub fn next_tab(&mut self) {
+        self.selected_tab = self.selected_tab.next();
+    }
+
+    pub fn previous_tab(&mut self) {
+        self.selected_tab = self.selected_tab.previous();
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -80,7 +170,7 @@ impl App {
 
             match self.state {
                 AppState::StartScreen => {
-                    self.typing_test.handle_key_event()?;
+                    self.handle_key_event()?;
                     if self.typing_test.progress() > 0 {
                         self.typing_test.update_test_data();
                         last_update = Instant::now();
@@ -88,7 +178,7 @@ impl App {
                     }
                 }
                 AppState::RunningTest => {
-                    self.typing_test.handle_key_event()?;
+                    self.handle_key_event()?;
                     if self.typing_test.index == self.typing_test.target_text.len() {
                         self.typing_test.text_finished = true;
                         self.typing_test.stop_timer();
