@@ -1,8 +1,10 @@
 mod app;
 mod ui;
 mod type_test;
-mod options;
+mod app_options;
+mod text_gen;
 use ui::*;
+
 use ratatui::prelude::*;
 use std::io;
 
