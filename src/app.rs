@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    options::Options,
+    app_options::AppOptions,
     type_test::{TestDataPerSecond, TypingTest},
     ui::draw_ui,
 };
@@ -51,7 +51,7 @@ impl SelectedTab {
 }
 
 pub struct App {
-    pub options: Options,
+    pub options: AppOptions,
     pub typing_test: TypingTest,
     pub state: AppState,
     selected_tab: SelectedTab,
@@ -59,11 +59,10 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let opt = Options::new();
+        let opt = AppOptions::new();
         Self {
             options: opt.clone(),
             typing_test: TypingTest::new(
-                opt.words_amount.clone() as usize,
                 opt.test_language.clone(),
                 opt.test_type.clone(),
             ),
