@@ -4,7 +4,7 @@ use crate::type_test::TestDataPerSecond;
 
 
 
-fn create_chart<'a>(
+pub fn create_chart<'a>(
     test_data_history: &'a [TestDataPerSecond],
     wpm_points: &'a [(f64, f64)],
     wpm_raw_points: &'a [(f64, f64)],

@@ -8,10 +8,9 @@ use std::{
 
 use crate::{
     app_options::AppOptions,
-    type_test::{TestDataPerSecond, TypingTest},
-    ui::draw_ui,
+    type_test::TypingTest,
+    ui::{draw_ui, tabs::SelectedTab},
 };
-
 
 #[derive(Default, Clone)]
 pub enum AppState {
@@ -20,34 +19,6 @@ pub enum AppState {
     RunningTest,
     EndScreen,
 }
-
-// #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
-// enum SelectedTab {
-//     #[default]
-//     #[strum(to_string = "Tab 1")] // start screen / test area / end screen
-//     Tab1,
-//     #[strum(to_string = "Tab 2")] // options
-//     Tab2,
-//     #[strum(to_string = "Tab 3")] // account
-//     Tab3,
-//     #[strum(to_string = "Tab 4")] // about
-//     Tab4,
-// }
-// impl SelectedTab {
-//     /// Get the previous tab, if there is no previous tab return the current tab.
-//     fn previous(self) -> Self {
-//         let current_index: usize = self as usize;
-//         let previous_index = current_index.saturating_sub(1);
-//         Self::from_repr(previous_index).unwrap_or(self)
-//     }
-
-//     /// Get the next tab, if there is no next tab return the current tab.
-//     fn next(self) -> Self {
-//         let current_index = self as usize;
-//         let next_index = current_index.saturating_add(1);
-//         Self::from_repr(next_index).unwrap_or(self)
-//     }
-// }
 
 pub struct App {
     pub options: AppOptions,
@@ -61,10 +32,7 @@ impl App {
         let opt = AppOptions::new();
         Self {
             options: opt.clone(),
-            typing_test: TypingTest::new(
-                opt.test_language.clone(),
-                opt.test_type.clone(),
-            ),
+            typing_test: TypingTest::new(opt.test_language.clone(), opt.test_type.clone()),
             state: AppState::StartScreen,
             selected_tab: SelectedTab::Tab1,
         }
@@ -88,10 +56,16 @@ impl App {
                     }
                     match key.modifiers {
                         KeyModifiers::CONTROL => {
-                            if key.kind == KeyEventKind::Press{
-                                if key.code == KeyCode::Char('q') {process::exit(0)};
-                                if key.code == KeyCode::Char('l') {self.next_tab();};
-                                if key.code == KeyCode::Char('h') {self.previous_tab();};
+                            if key.kind == KeyEventKind::Press {
+                                if key.code == KeyCode::Char('q') {
+                                    process::exit(0)
+                                };
+                                if key.code == KeyCode::Char('l') {
+                                    self.next_tab();
+                                };
+                                if key.code == KeyCode::Char('h') {
+                                    self.previous_tab();
+                                };
                             }
                         }
                         _ => {}
@@ -164,7 +138,8 @@ impl App {
                 }
             }
 
-            terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
+            // terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
+            terminal.draw(|f| draw_ui(f, &self.state, &self.selected_tab, &self.typing_test))?;
 
             match self.state {
                 AppState::StartScreen => {

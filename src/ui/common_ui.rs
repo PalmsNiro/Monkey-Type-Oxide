@@ -4,7 +4,7 @@ use ratatui::{
 };
 use textwrap::{wrap, Options, WordSplitter};
 
-fn wrap_text(text: &str, width: usize) -> Vec<String> {
+pub fn wrap_text(text: &str, width: usize) -> Vec<String> {
     let options = Options::new(width)
         .word_separator(textwrap::WordSeparator::AsciiSpace)
         .word_splitter(WordSplitter::NoHyphenation)
@@ -15,7 +15,7 @@ fn wrap_text(text: &str, width: usize) -> Vec<String> {
         .collect()
 }
 
-fn create_colored_text<'a>(
+pub  fn create_colored_text<'a>(
     wrapped_text: &'a [String],
     colored_chars: &'a [(char, Style)],
     current_index: usize,

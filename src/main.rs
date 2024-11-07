@@ -3,7 +3,7 @@ mod ui;
 mod type_test;
 mod app_options;
 mod text_gen;
-use ui::*;
+use crate::ui::*;
 
 use ratatui::prelude::*;
 use std::io;
