@@ -19,15 +19,13 @@ pub enum TestType {
 pub struct AppOptions {
     pub ui_language: Language,
     pub test_language: Language,
-    pub words_amount: usize,
     pub test_type: TestType,
 }
 impl AppOptions {
     pub fn new() -> Self {
         Self {
             ui_language: Language::De,
-            test_language: Language::De,
-            words_amount: 15,
+            test_language: Language::En,
             test_type: TestType::RandomWords1K,
         }
     }
