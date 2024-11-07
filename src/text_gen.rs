@@ -13,7 +13,7 @@ use std::path::Path;
 use crate::app_options::*;
 
 // Text Length for simple sentences
-const TEXT_LEN: usize = 15;
+const TEXT_LEN: usize = 30;
 
 #[derive(Deserialize)]
 struct LanguageWords {
@@ -26,14 +26,14 @@ struct LanguageWords {
     additional_accents: Vec<Vec<String>>,
 }
 
-pub fn get_sentence(lan:LanguageWords, test_type:TestType) -> String{
+pub fn get_sentence(lan:Language, test_type:TestType) -> String{
     let lan = match lan{
-        LanguageWords::De => Lang::De,
-        LanguageWords::En => Lang::En,
+        Language::De => Lang::De,
+        Language::En => Lang::En,
     };
     let test_text = match test_type {
         TestType::RandomWords => get_random_sentence( lan),
-        TestType::RandomWords1K => get_random_sentence1k(),
+        TestType::RandomWords1K => get_random_sentence1k(lan),
         TestType::RandomWords10K => todo!(),
         TestType::Quotes => todo!(),
         TestType::TimeRace => todo!(),
@@ -62,11 +62,13 @@ fn get_random_sentence(language: Lang) -> String {
     sentence
 }
 
-fn get_random_sentence1k () ->String{
-    let sentence = read_words_from_file("util/german.json").unwrap();
-    
-    let formated_sentence = format!("{:#?}",sentence);
-    formated_sentence
+fn get_random_sentence1k (language: Lang) ->String{
+    match read_words_from_file("util/german.json"){
+        Ok(words)=>{choose_random_words(language, words)
+
+        }
+        Err(e) => format!("failure: {}",e),
+    } 
 }
 
 fn replace_umlauts(sentence: String)->String{
@@ -91,5 +93,18 @@ fn read_words_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<String>, Box<dyn 
     // Read the JSON contents of the file as an instance 
     let languge: LanguageWords = serde_json::from_reader(reader)?;
 
-    Ok(words.words)
+    Ok(languge.words)
+}
+
+
+fn choose_random_words(language: Lang, words: Vec<String>) -> String{
+    let mut rng = thread_rng();
+    let selected_words: Vec<String> = words.choose_multiple(&mut rng, TEXT_LEN).cloned().collect();
+
+    let mut sentence = selected_words.join(" ");
+
+    if language == Lang::De{
+        sentence = replace_umlauts(sentence);
+    };
+    sentence
 }
