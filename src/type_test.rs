@@ -7,11 +7,10 @@ use crossterm::event::{self, KeyCode, KeyEventKind};
 use log::error;
 use ratatui::style::{Color, Style};
 
-use rand::seq::SliceRandom;
-use rand::thread_rng;
-use random_word::Lang;
 
-use crate::options::{Language, TestType};
+use crate::text_gen::get_sentence;
+
+use crate::app_options::{Language, TestType};
 
 #[derive(Clone)]
 pub struct TestDataPerSecond {
@@ -30,7 +29,7 @@ pub struct TypingTest {
     pub index: usize,
     pub mistakes: usize,
     pub total_chars_tipped: usize,
-    pub total_words: usize,
+    // pub total_words: usize,
     pub text_finished: bool,
     pub start_time: Option<Instant>,
     pub end_time: Option<Instant>,
@@ -40,8 +39,8 @@ pub struct TypingTest {
     mistakes_in_current_second: usize,
 }
 impl TypingTest {
-    pub fn new(words_amount: usize, lan: Language, test_type: TestType) -> Self {
-        let text = Self::get_random_sentence(words_amount, &lan);
+    pub fn new(lan: Language, test_type: TestType) -> Self {
+        let text = get_sentence(lan.clone(), test_type.clone());
         let colored_chars = text
             .chars()
             .map(|c| (c, Style::default().fg(Color::DarkGray)))
@@ -56,7 +55,7 @@ impl TypingTest {
             index: 0,
             mistakes: 0,
             total_chars_tipped: 0,
-            total_words: words_amount,
+            // total_words: words_amount,
             text_finished: false,
             start_time: None,
             end_time: None,
@@ -67,33 +66,7 @@ impl TypingTest {
         }
     }
 
-    pub fn get_random_sentence(words_amount: usize, language: &Language) -> String {
-        let lan = match language {
-            Language::De => Lang::De,
-            Language::En => Lang::En,
-        };
-
-        let word_list: &[&str] = random_word::all(lan);
-        let mut rng = thread_rng();
-
-        let selected_words: Vec<&str> = word_list
-            .choose_multiple(&mut rng, words_amount)
-            .cloned()
-            .collect();
-
-        let sentence = selected_words.join(" ");
-        // let capitalized =
-        //     sentence.chars().nth(0).unwrap().to_uppercase().to_string() + &sentence[1..];
-
-        sentence
-            .replace("ä", "ae")
-            .replace("ö", "oe")
-            .replace("ü", "ue")
-            .replace("Ä", "Ae")
-            .replace("Ö", "Oe")
-            .replace("Ü", "Ue")
-            .replace("ß", "ss")
-    }
+    
 
     pub fn handle_key_event(&mut self) -> Result<(), io::Error> {
         Ok(if let event::Event::Key(key) = event::read()? {
@@ -251,7 +224,6 @@ impl TypingTest {
 
     pub fn reset(&mut self) {
         let new_test = TypingTest::new(
-            self.total_words.clone(),
             self.language.clone(),
             self.test_type.clone(),
         );
