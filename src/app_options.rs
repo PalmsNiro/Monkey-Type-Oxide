@@ -10,6 +10,20 @@ pub enum Language {
     #[strum(to_string = "German")]
     De,
 }
+impl Language{
+    pub fn previous(self) -> Self {
+        let current_index: usize = self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(self)
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    pub fn next(self) -> Self {
+        let current_index = self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(self)
+    }
+}
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
 pub enum TestType {
@@ -24,6 +38,20 @@ pub enum TestType {
     Quotes, // random qutos
     #[strum(to_string = "Jokes")]
     Jokes, // silly jokes
+}
+impl TestType{
+    pub fn previous(self) -> Self {
+        let current_index: usize = self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(self)
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    pub fn next(self) -> Self {
+        let current_index = self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(self)
+    }
 }
 
 #[derive(Clone)]

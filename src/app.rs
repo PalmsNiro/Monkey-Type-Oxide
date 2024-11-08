@@ -87,7 +87,7 @@ impl App {
                     (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
                     (KeyCode::Esc, _) => exit_app(),
                     _ => {
-                        // Tab-spezifische Eingabebehandlung
+                        // Tab-specific Inputhandeling
                         match self.selected_tab {
                             SelectedTab::Tab1 => self.handle_typing_input(key),
                             SelectedTab::Tab2 => self.handle_options_input(key),
@@ -123,9 +123,9 @@ impl App {
                 KeyCode::Down => self.options_state.next(),
                 KeyCode::Char('j') => self.options_state.next(),
                 KeyCode::Left => self.change_option_value(false),
-                KeyCode::Char('l') => self.change_option_value(false),
+                KeyCode::Char('h') => self.change_option_value(false),
                 KeyCode::Right => self.change_option_value(true),
-                KeyCode::Char('h') => self.change_option_value(true),
+                KeyCode::Char('l') => self.change_option_value(true),
                 _ => {}
             }
         }
@@ -139,19 +139,28 @@ impl App {
         match self.options_state.selected_option {
             0 => self.change_test_language(increase),
             1 => self.change_test_type(increase),
-            2 => {self.options.time_race  =!self.options.time_race} // Race / Hardcore
-            3 => {self.options.hardcore  =!self.options.hardcore} // Race / Hardcore
+            2 => {self.options.time_race  =!self.options.time_race} // Time Race 
+            3 => {self.options.hardcore  =!self.options.hardcore} // Hardcore
             4 => {} // UI Language 
             _=>{}
         }
     }
 
     fn change_test_language(&mut self, increase: bool) {
-        // Implementierung für das Ändern der Testsprache
+        if increase{
+            self.options.test_language = self.options.test_language.next();
+        }else{
+            self.options.test_language = self.options.test_language.previous();
+        }
     }
 
     fn change_test_type(&mut self, increase: bool) {
         // Implementierung für das Ändern des Testtyps
+        if increase{
+            self.options.test_type = self.options.test_type.next();
+        }else{
+            self.options.test_type = self.options.test_type.previous();
+        }
     }
 
     pub fn next_tab(&mut self) {
@@ -220,13 +229,13 @@ impl App {
 }
 
 fn cleanup_terminal() -> Result<(), Box<dyn std::error::Error>> {
-    // Raw mode deaktivieren
+    // deactivate  Raw mode 
     disable_raw_mode()?;
 
-    // Terminal säubern
+    // clearing Terminal
     stdout().execute(Clear(ClearType::All))?;
 
-    // Optional: Cursor an den Anfang setzen
+    // Optional: Set Cursor to  beginning
     stdout().execute(crossterm::cursor::MoveTo(0, 0))?;
 
     Ok(())
