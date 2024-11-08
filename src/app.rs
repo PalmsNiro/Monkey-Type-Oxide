@@ -1,8 +1,13 @@
-use crossterm::event::{self, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::{
+    event::{self, KeyCode, KeyEventKind, KeyModifiers},
+    terminal::{disable_raw_mode, Clear, ClearType},
+    ExecutableCommand,
+};
 use log::info;
 use ratatui::{prelude::Backend, widgets::TableState, Terminal};
 use std::{
-    io, process, thread,
+    io::{self, stdout},
+    process, thread,
     time::{Duration, Instant},
 };
 
@@ -50,48 +55,50 @@ impl App {
                     if key.kind == KeyEventKind::Press {
                         match (key.code, key.modifiers) {
                             // CTRL Kombinationen
-                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => exit_app(),
                             (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
                             (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
-                            
+
                             // Normale Tasten (nur wenn keine Modifiers gedrückt sind)
                             (KeyCode::Char(c), KeyModifiers::NONE) => self.typing_test.type_char(c),
-                            (KeyCode::Esc, _) => process::exit(0),
+                            (KeyCode::Esc, _) => exit_app(),
                             _ => {}
                         }
                     }
                 }
-                
+
                 AppState::RunningTest => {
                     if key.kind == KeyEventKind::Press {
                         match (key.code, key.modifiers) {
                             // CTRL Kombinationen
-                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => exit_app(),
                             (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
                             (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
-                            
+
                             // Normale Tasten (nur wenn keine Modifiers gedrückt sind)
                             (KeyCode::Char(c), KeyModifiers::NONE) => self.typing_test.type_char(c),
-                            (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
-                            (KeyCode::Esc, _) => process::exit(0),
+                            (KeyCode::Backspace, KeyModifiers::NONE) => {
+                                self.typing_test.backspace()
+                            }
+                            (KeyCode::Esc, _) => exit_app(),
                             _ => {}
                         }
                     }
                 }
-                
+
                 AppState::EndScreen => {
                     if key.kind == KeyEventKind::Press {
                         match (key.code, key.modifiers) {
                             // CTRL Kombinationen
-                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => exit_app(),
                             (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
                             (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
-                            
+
                             // Normale Tasten
-                            (KeyCode::Char('r'), KeyModifiers::NONE) | 
-                            (KeyCode::Char('R'), KeyModifiers::NONE) => self.start_new_test(),
-                            (KeyCode::Char('q'), KeyModifiers::NONE) | 
-                            (KeyCode::Char('Q'), KeyModifiers::NONE) => process::exit(0),
+                            (KeyCode::Char('r'), KeyModifiers::NONE)
+                            | (KeyCode::Char('R'), KeyModifiers::NONE) => self.start_new_test(),
+                            (KeyCode::Char('q'), KeyModifiers::NONE)
+                            | (KeyCode::Char('Q'), KeyModifiers::NONE) => exit_app(),
                             (KeyCode::Esc, _) => process::exit(0),
                             _ => {}
                         }
@@ -157,3 +164,24 @@ impl App {
         }
     }
 }
+
+fn cleanup_terminal() -> Result<(), Box<dyn std::error::Error>> {
+    // Raw mode deaktivieren
+    disable_raw_mode()?;
+
+    // Terminal säubern
+    stdout().execute(Clear(ClearType::All))?;
+
+    // Optional: Cursor an den Anfang setzen
+    stdout().execute(crossterm::cursor::MoveTo(0, 0))?;
+
+    Ok(())
+}
+
+fn exit_app() {
+    if let Err(e) = cleanup_terminal() {
+        eprintln!("Error cleaning up terminal: {}", e);
+    }
+    process::exit(0);
+}
+
