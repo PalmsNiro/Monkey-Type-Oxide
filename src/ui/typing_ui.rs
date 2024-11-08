@@ -21,9 +21,9 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),      // Info-Bar
+            Constraint::Length(2),      // Spacing after tabs
             Constraint::Percentage(30), // Goaltext
-            Constraint::Percentage(50), // Space for future use (chart)
+            Constraint::Percentage(50), // chart
             Constraint::Length(3),      // Progress-Bar
         ])
         .split(frame.area());
@@ -86,9 +86,9 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(2),
-            Constraint::Length(8),
-            Constraint::Length(50),
+            Constraint::Length(2), // spacing after tabs
+            Constraint::Length(8), // stats
+            Constraint::Min(0),    //chart
         ])
         .split(frame.area());
 
@@ -112,14 +112,14 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
         typing_test.target_text.len()
     );
 
-    let options_text = vec![
+    let stats_text = vec![
         Line::from(accuracy_text),
         Line::from(time_text),
         Line::from(wpm_text),
         Line::from(error_text),
     ];
     frame.render_widget(
-        Paragraph::new(options_text)
+        Paragraph::new(stats_text)
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::ALL).title("Test stats")),
         chunks[1],
