@@ -2,6 +2,11 @@ use std::default;
 
 use strum::{Display, EnumIter, FromRepr};
 
+/*
+    !!!
+    TODO: Check how we can reduce the repeated writing of the next/previous functions for iterating over enums
+*/
+
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
 pub enum Language {
     #[default]
@@ -69,7 +74,7 @@ impl AppOptions {
             test_type: TestType::RandomWords1K,
             time_race: false,
             hardcore: false,
-            ui_language: Language::De,
+            ui_language: Language::En,
         }
     }
 }

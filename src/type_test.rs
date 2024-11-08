@@ -200,10 +200,10 @@ impl TypingTest {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, lan: Language, test_type: TestType) {
         let new_test = TypingTest::new(
-            self.language.clone(),
-            self.test_type.clone(),
+            lan,
+            test_type,
         );
         *self = new_test;
     }

@@ -73,7 +73,7 @@ impl App {
     }
 
     fn start_new_test(&mut self) {
-        self.typing_test.reset(); // Reset Test
+        self.typing_test.reset(self.options.test_language,self.options.test_type);  // Reset Test
         self.state = AppState::StartScreen; // Reset App-State
     }
 
@@ -141,9 +141,12 @@ impl App {
             1 => self.change_test_type(increase),
             2 => {self.options.time_race  =!self.options.time_race} // Time Race 
             3 => {self.options.hardcore  =!self.options.hardcore} // Hardcore
-            4 => {} // UI Language 
+            4 => self.change_ui_language(increase), // UI Language 
             _=>{}
         }
+        //TODO dont reset test on every change 
+        //*-> change when returning to test screen , set flag here that test needs reset ->When returning to startscreen reset
+        self.typing_test.reset(self.options.test_language,self.options.test_type); 
     }
 
     fn change_test_language(&mut self, increase: bool) {
@@ -160,6 +163,15 @@ impl App {
             self.options.test_type = self.options.test_type.next();
         }else{
             self.options.test_type = self.options.test_type.previous();
+        }
+    }
+
+    fn change_ui_language(&mut self, increase: bool) {
+        // Implementierung für das Ändern des Testtyps
+        if increase{
+            self.options.ui_language = self.options.ui_language.next();
+        }else{
+            self.options.ui_language = self.options.ui_language.previous();
         }
     }
 
