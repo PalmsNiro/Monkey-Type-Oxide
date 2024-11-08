@@ -1,9 +1,9 @@
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 use ratatui::{
-    layout::Rect, style::{Color, Style, Stylize}, text::Line, widgets::{Block, Borders, Paragraph, Tabs}, Frame
+    layout::Rect, style::{Color, Style, Stylize}, text::{Line, Span}, widgets::{Block, Borders, Paragraph, Tabs}, Frame
 };
 
-use crate::app_options::AppOptions;
+use crate::{app::OptionsState, app_options::AppOptions};
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
 pub enum SelectedTab {
@@ -55,16 +55,29 @@ pub fn draw_tabs(frame: &mut Frame, area: Rect, selected_tab: &SelectedTab) {
     frame.render_widget(tabs, area);
 }
 
-pub fn draw_options(frame: &mut Frame<'_>, main_layout: &Vec<ratatui::prelude::Rect>, options: &AppOptions) {
-    let test_language = format!("Test Langugage: {}", options.test_language.to_string());
-    let test_type  = format!("Test Type: {}", options.test_type.to_string());
-    let ui_language =format!("Ui Language (Not Yet Supported)") ;
-
-    let options_text = vec![
-        Line::from(test_language),
-        Line::from(test_type),
-        Line::from(ui_language),
+pub fn draw_options(frame: &mut Frame<'_>, main_layout: &Vec<Rect>, options: &AppOptions, options_state: &OptionsState) {
+    let options_content = vec![
+        (format!("Test Language: {}", options.test_language.to_string()), 0),
+        (format!("Test Type: {}", options.test_type.to_string()), 1),
+        (format!("Timed Race: {}",options.time_race.then_some("enabled").unwrap_or("disabled")),2),
+        (format!("Hardcore: {}",options.hardcore.then_some("enabled").unwrap_or("disabled")),3),
+        (String::from("UI Language (Not Yet Supported)"), 4),
     ];
+
+    let options_text: Vec<Line> = options_content
+        .into_iter()
+        .map(|(text, index)| {
+            if index == options_state.selected_option {
+                Line::from(vec![
+                    Span::styled("> ", Style::default().fg(Color::Yellow)),
+                    Span::styled(text, Style::default().fg(Color::Yellow))
+                ])
+            } else {
+                Line::from(text)
+            }
+        })
+        .collect();
+
     frame.render_widget(
         Paragraph::new(options_text)
             .block(Block::default().borders(Borders::ALL).title("Options")),

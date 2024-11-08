@@ -8,7 +8,7 @@ mod layout_ui;
 pub mod tabs;
 
 use ratatui::{style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Paragraph}, Frame};
-use crate::{app::AppState, app_options::AppOptions};
+use crate::{app::{AppState, OptionsState}, app_options::AppOptions};
 use crate::type_test::TypingTest;
 
 pub use chart::create_chart;
@@ -17,14 +17,14 @@ use tabs::{SelectedTab,draw_tabs,draw_options};
 use layout_ui::create_main_layout;
 
 
-pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedTab, typing_test: &TypingTest,options: &AppOptions) {
+pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedTab, typing_test: &TypingTest,options: &AppOptions, options_state:&OptionsState) {
     let main_layout = create_main_layout(frame);
     
     draw_tabs(frame, main_layout[0], selected_tab);
     
     match selected_tab {
         SelectedTab::Tab1 => typing_ui::draw_typing_tab(frame, typing_test, app_state),
-        SelectedTab::Tab2 => draw_options(frame, &main_layout, options),
+        SelectedTab::Tab2 => draw_options(frame, &main_layout, options,options_state),
         SelectedTab::Tab3 => {
             // Account Tab
             let account_text = vec![

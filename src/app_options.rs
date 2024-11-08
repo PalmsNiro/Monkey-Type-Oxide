@@ -37,11 +37,11 @@ pub struct AppOptions {
 impl AppOptions {
     pub fn new() -> Self {
         Self {
-            ui_language: Language::De,
             test_language: Language::En,
             test_type: TestType::RandomWords1K,
             time_race: false,
             hardcore: false,
+            ui_language: Language::De,
         }
     }
 }
