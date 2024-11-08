@@ -1,9 +1,4 @@
-use std::{
-    io,
-    time::{Duration, Instant},
-};
-
-use crossterm::event::{self, KeyCode, KeyEventKind};
+use std::time::{Duration, Instant};
 use log::error;
 use ratatui::style::{Color, Style};
 
@@ -68,24 +63,7 @@ impl TypingTest {
 
     
 
-    pub fn handle_key_event(&mut self) -> Result<(), io::Error> {
-        Ok(if let event::Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                    self.type_char(c);
-                }
-                KeyCode::Backspace if key.kind == KeyEventKind::Press => {
-                    self.backspace();
-                }
-                KeyCode::Esc if key.kind == KeyEventKind::Press => {
-                    return Ok(());
-                }
-                _ => {}
-            }
-        })
-    }
-
-    fn type_char(&mut self, c: char) {
+    pub fn type_char(&mut self, c: char) {
         if let Some(target_char) = self.target_text.chars().nth(self.index) {
             //start timer
             if self.index == 0 {
@@ -193,7 +171,7 @@ impl TypingTest {
         }
     }
 
-    fn backspace(&mut self) {
+    pub fn backspace(&mut self) {
         if !self.user_input.is_empty() {
             self.user_input.pop();
             if self.index > 0 {
@@ -222,10 +200,10 @@ impl TypingTest {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, lan: Language, test_type: TestType) {
         let new_test = TypingTest::new(
-            self.language.clone(),
-            self.test_type.clone(),
+            lan,
+            test_type,
         );
         *self = new_test;
     }

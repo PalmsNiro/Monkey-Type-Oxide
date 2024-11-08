@@ -15,6 +15,7 @@ dependencies = [
  "ratatui",
  "serde",
  "serde_json",
+ "strum",
  "terminal_size",
  "textwrap",
 ]
