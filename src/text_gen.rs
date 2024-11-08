@@ -99,9 +99,9 @@ pub fn get_sentence(lan: Language, test_type: TestType) -> String {
             }
         }
         TestType::Quotes => String::from("Quotes feature not implemented yet"),
-        TestType::TimeRace => String::from("Time Race feature not implemented yet"),
+        // TestType::TimeRace => String::from("Time Race feature not implemented yet"),
         TestType::Jokes => String::from("Jokes feature not implemented yet"),
-        TestType::Hardcore => String::from("Hardcore feature not implemented yet"),
+        // TestType::Hardcore => String::from("Hardcore feature not implemented yet"),
     }
 }
 

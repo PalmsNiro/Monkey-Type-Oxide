@@ -133,7 +133,7 @@ impl App {
             }
 
             // terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
-            terminal.draw(|f| draw_ui(f, &self.state, &self.selected_tab, &self.typing_test))?;
+            terminal.draw(|f| draw_ui(f, &self.state, &self.selected_tab, &self.typing_test,&self.options))?;
 
             match self.state {
                 AppState::StartScreen => {

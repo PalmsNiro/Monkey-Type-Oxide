@@ -29,21 +29,21 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
         .split(frame.area());
 
     //Infotext
-    let info_text = format!(
-        "Mistakes: {}, Current Index: {}, Char: {}, Accuracy: {:.2}%, test_data size: {}",
-        typing_test.mistakes,
-        typing_test.index,
-        typing_test
-            .target_text
-            .chars()
-            .nth(typing_test.index)
-            .unwrap_or(' '),
-        typing_test.accuracy(),
-        typing_test.test_data_history.len(),
-    );
+    // let info_text = format!(
+    //     "Mistakes: {}, Current Index: {}, Char: {}, Accuracy: {:.2}%, test_data size: {}",
+    //     typing_test.mistakes,
+    //     typing_test.index,
+    //     typing_test
+    //         .target_text
+    //         .chars()
+    //         .nth(typing_test.index)
+    //         .unwrap_or(' '),
+    //     typing_test.accuracy(),
+    //     typing_test.test_data_history.len(),
+    // );
 
-    let info =
-        Paragraph::new(info_text).block(Block::default().borders(Borders::ALL).title("Info"));
+    // let info =
+        // Paragraph::new(info_text).block(Block::default().borders(Borders::ALL).title("Info"));
 
     // frame.render_widget(info, chunks[0]);
 

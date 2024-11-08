@@ -1,10 +1,9 @@
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 use ratatui::{
-    layout::Rect,
-    style::{Color, Style, Stylize},
-    widgets::{Block, Borders, Tabs},
-    Frame,
+    layout::Rect, style::{Color, Style, Stylize}, text::Line, widgets::{Block, Borders, Paragraph, Tabs}, Frame
 };
+
+use crate::app_options::AppOptions;
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
 pub enum SelectedTab {
@@ -54,4 +53,21 @@ pub fn draw_tabs(frame: &mut Frame, area: Rect, selected_tab: &SelectedTab) {
         .divider("|");
 
     frame.render_widget(tabs, area);
+}
+
+pub fn draw_options(frame: &mut Frame<'_>, main_layout: &Vec<ratatui::prelude::Rect>, options: &AppOptions) {
+    let test_language = format!("Test Langugage: {}", options.test_language.to_string());
+    let test_type  = format!("Test Type: {}", options.test_type.to_string());
+    let ui_language =format!("Ui Language (Not Yet Supported)") ;
+
+    let options_text = vec![
+        Line::from(test_language),
+        Line::from(test_type),
+        Line::from(ui_language),
+    ];
+    frame.render_widget(
+        Paragraph::new(options_text)
+            .block(Block::default().borders(Borders::ALL).title("Options")),
+        main_layout[1],
+    );
 }
