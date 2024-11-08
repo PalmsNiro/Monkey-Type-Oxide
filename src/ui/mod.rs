@@ -7,10 +7,6 @@ mod common_ui;
 mod layout_ui;
 pub mod tabs;
 
-// Re-export wichtiger Komponenten
-// pub use self::layout_ui::create_main_layout;
-// pub use self::typing_ui::draw_typing_tab;
-
 use ratatui::{style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Paragraph}, Frame};
 use crate::app::AppState;
 use crate::type_test::TypingTest;
@@ -19,8 +15,6 @@ pub use chart::create_chart;
 pub use common_ui::{create_colored_text, wrap_text};
 use tabs::{SelectedTab,draw_tabs};
 use layout_ui::create_main_layout;
-// pub use typing_ui::draw_typing_screen;
-// use typing_ui::draw_typing_tab;
 
 
 pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedTab, typing_test: &TypingTest) {

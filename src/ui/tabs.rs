@@ -43,13 +43,13 @@ pub fn draw_tabs(frame: &mut Frame, area: Rect, selected_tab: &SelectedTab) {
                 SelectedTab::Tab3 => ("Account", Color::Magenta),
                 SelectedTab::Tab4 => ("About", Color::Red),
             };
-            format!("  {}  ", name).fg(Color::White).bg(color)
+            format!("  {}  ", name).fg(Color::White)
         })
         .collect::<Vec<_>>();
 
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::BOTTOM))
-        .highlight_style(Style::default().fg(Color::White).bg(Color::DarkGray))
+        .highlight_style(Style::default().fg(Color::LightCyan))
         .select((*selected_tab) as usize)
         .divider("|");
 
