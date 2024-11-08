@@ -44,75 +44,62 @@ impl App {
     }
 
     fn handle_key_event(&mut self) -> Result<(), io::Error> {
-        match self.state {
-            AppState::StartScreen => {
-                if let event::Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                            self.typing_test.type_char(c)
+        if let event::Event::Key(key) = event::read()? {
+            match self.state {
+                AppState::StartScreen => {
+                    if key.kind == KeyEventKind::Press {
+                        match (key.code, key.modifiers) {
+                            // CTRL Kombinationen
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
+                            (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
+                            
+                            // Normale Tasten (nur wenn keine Modifiers gedrückt sind)
+                            (KeyCode::Char(c), KeyModifiers::NONE) => self.typing_test.type_char(c),
+                            (KeyCode::Esc, _) => process::exit(0),
+                            _ => {}
                         }
-                        KeyCode::Esc => process::exit(0),
-                        _ => {}
-                    }
-                    match key.modifiers {
-                        KeyModifiers::CONTROL => {
-                            if key.kind == KeyEventKind::Press {
-                                if key.code == KeyCode::Char('q') {
-                                    process::exit(0)
-                                };
-                                if key.code == KeyCode::Char('l') {
-                                    self.next_tab();
-                                };
-                                if key.code == KeyCode::Char('h') {
-                                    self.previous_tab();
-                                };
-                            }
-                        }
-                        _ => {}
                     }
                 }
-                Ok(())
-            }
-            AppState::RunningTest => {
-                if let event::Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                            self.typing_test.type_char(c)
+                
+                AppState::RunningTest => {
+                    if key.kind == KeyEventKind::Press {
+                        match (key.code, key.modifiers) {
+                            // CTRL Kombinationen
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
+                            (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
+                            
+                            // Normale Tasten (nur wenn keine Modifiers gedrückt sind)
+                            (KeyCode::Char(c), KeyModifiers::NONE) => self.typing_test.type_char(c),
+                            (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
+                            (KeyCode::Esc, _) => process::exit(0),
+                            _ => {}
                         }
-                        KeyCode::Backspace => self.typing_test.backspace(),
-                        KeyCode::Esc => process::exit(0),
-                        _ => {}
-                    }
-                    match key.modifiers {
-                        KeyModifiers::CONTROL
-                            if (key.code == KeyCode::Char('q')
-                                && key.kind == KeyEventKind::Press) =>
-                        {
-                            process::exit(0)
-                        }
-                        _ => {}
                     }
                 }
-                Ok(())
-            }
-            AppState::EndScreen => {
-                if let event::Event::Key(key) = event::read()? {
-                    match key.code {
-                        KeyCode::Char(c) if key.kind == KeyEventKind::Press => {
-                            if c == 'r' || c == 'R' {
-                                self.start_new_test();
-                            }
-                            if c == 'q' || c == 'Q' {
-                                process::exit(0);
-                            }
+                
+                AppState::EndScreen => {
+                    if key.kind == KeyEventKind::Press {
+                        match (key.code, key.modifiers) {
+                            // CTRL Kombinationen
+                            (KeyCode::Char('q'), KeyModifiers::CONTROL) => process::exit(0),
+                            (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
+                            (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
+                            
+                            // Normale Tasten
+                            (KeyCode::Char('r'), KeyModifiers::NONE) | 
+                            (KeyCode::Char('R'), KeyModifiers::NONE) => self.start_new_test(),
+                            (KeyCode::Char('q'), KeyModifiers::NONE) | 
+                            (KeyCode::Char('Q'), KeyModifiers::NONE) => process::exit(0),
+                            (KeyCode::Esc, _) => process::exit(0),
+                            _ => {}
                         }
-                        KeyCode::Esc => process::exit(0),
-                        _ => {}
                     }
                 }
-                Ok(())
             }
         }
+        Ok(())
     }
 
     pub fn next_tab(&mut self) {

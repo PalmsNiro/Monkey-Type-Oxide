@@ -11,33 +11,64 @@ pub mod tabs;
 // pub use self::layout_ui::create_main_layout;
 // pub use self::typing_ui::draw_typing_tab;
 
+use ratatui::{style::{Color, Style}, text::{Line, Span}, widgets::{Block, Borders, Paragraph}, Frame};
 use crate::app::AppState;
 use crate::type_test::TypingTest;
-use ratatui::Frame;
-use tabs::SelectedTab;
 
-pub use common_ui::{wrap_text, create_colored_text};
-pub use typing_ui::draw_typing_screen;
 pub use chart::create_chart;
+pub use common_ui::{create_colored_text, wrap_text};
+use tabs::SelectedTab;
+use layout_ui::{create_main_layout, draw_tabs};
+pub use typing_ui::draw_typing_screen;
+use typing_ui::draw_typing_tab;
+
 
 pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedTab, typing_test: &TypingTest) {
-    // Erstelle das Haupt-Layout mit Tabs
-    let main_layout = layout_ui::create_main_layout(frame);
-
-    // Rendere die Tab-Leiste
-    layout_ui::draw_tabs(frame, main_layout[0], selected_tab);
-
-    // Rendere den aktiven Tab-Inhalt
+    let main_layout = create_main_layout(frame);
+    
+    draw_tabs(frame, main_layout[0], selected_tab);
+    
     match selected_tab {
-        // SelectedTab::Tab1 => todo!(),
-        // SelectedTab::Tab2 => todo!(),
-        // SelectedTab::Tab3 => todo!(),
-        // SelectedTab::Tab4 => todo!(),
-        // SelectedTab::Tab1 => typing_ui::draw_typing_tab(frame, main_layout[1], app_state),
         SelectedTab::Tab1 => typing_ui::draw_typing_tab(frame, typing_test, app_state),
-        // SelectedTab::Tab2 => options_ui::draw_options_tab(frame, main_layout[1]),
-        // SelectedTab::Tab3 => account::draw_account_tab(frame, main_layout[1]),
-        // SelectedTab::Tab4 => about::draw_about_tab(frame, main_layout[1]),
-        _ => {}
+        SelectedTab::Tab2 => {
+            // Options Tab
+            let options_text = vec![
+                Line::from("Options"),
+                Line::from("Coming Soon..."),
+            ];
+            frame.render_widget(
+                Paragraph::new(options_text)
+                    .block(Block::default().borders(Borders::ALL).title("Options")),
+                main_layout[1],
+            );
+        },
+        SelectedTab::Tab3 => {
+            // Account Tab
+            let account_text = vec![
+                Line::from("Account"),
+                Line::from("Coming Soon..."),
+            ];
+            frame.render_widget(
+                Paragraph::new(account_text)
+                    .block(Block::default().borders(Borders::ALL).title("Account")),
+                main_layout[1],
+            );
+        },
+        SelectedTab::Tab4 => {
+            // About Tab
+            let about_text = vec![
+                Line::from(vec![
+                    Span::styled("MonkeyTypeOxide", Style::default().fg(Color::Green))
+                ]),
+                Line::from("Version 0.1.0"),
+                Line::from(""),
+                Line::from("A Rust-based typing test application"),
+            ];
+            frame.render_widget(
+                Paragraph::new(about_text)
+                    .block(Block::default().borders(Borders::ALL).title("About")),
+                main_layout[1],
+            );
+        },
     }
 }
