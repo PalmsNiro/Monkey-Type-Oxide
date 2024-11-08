@@ -17,10 +17,10 @@ use crate::type_test::TypingTest;
 
 pub use chart::create_chart;
 pub use common_ui::{create_colored_text, wrap_text};
-use tabs::SelectedTab;
-use layout_ui::{create_main_layout, draw_tabs};
-pub use typing_ui::draw_typing_screen;
-use typing_ui::draw_typing_tab;
+use tabs::{SelectedTab,draw_tabs};
+use layout_ui::create_main_layout;
+// pub use typing_ui::draw_typing_screen;
+// use typing_ui::draw_typing_tab;
 
 
 pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedTab, typing_test: &TypingTest) {
