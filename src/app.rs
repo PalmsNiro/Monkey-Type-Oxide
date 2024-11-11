@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, KeyCode, KeyEventKind, KeyModifiers},
+    event::{self, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     terminal::{disable_raw_mode, Clear, ClearType},
     ExecutableCommand,
 };
@@ -81,18 +81,26 @@ impl App {
         if let event::Event::Key(key) = event::read()? {
             // Gemeinsame Shortcuts für alle Tabs
             if key.kind == KeyEventKind::Press {
-                match (key.code, key.modifiers) {
-                    (KeyCode::Char('q'), KeyModifiers::CONTROL) => exit_app(),
-                    (KeyCode::Char('l'), KeyModifiers::CONTROL) => self.next_tab(),
-                    (KeyCode::Char('h'), KeyModifiers::CONTROL) => self.previous_tab(),
-                    (KeyCode::Esc, _) => exit_app(),
-                    _ => {
-                        // Tab-specific Inputhandeling
-                        match self.selected_tab {
-                            SelectedTab::Tab1 => self.handle_typing_input(key),
-                            SelectedTab::Tab2 => self.handle_options_input(key),
-                            SelectedTab::Tab3 => self.handle_account_input(key),
-                            SelectedTab::Tab4 => self.handle_about_input(key),
+                // Prüfe zuerst auf CONTROL-Kombinationen
+                if key.modifiers.contains(KeyModifiers::CONTROL) {
+                    match key.code {
+                        KeyCode::Char('q') => exit_app(),
+                        KeyCode::Char('l') => self.next_tab(),
+                        KeyCode::Char('h') => self.previous_tab(),
+                        _ => {}
+                    }
+                } else {
+                    // Wenn kein CONTROL, dann normale Eingabebehandlung
+                    match key.code {
+                        KeyCode::Esc => exit_app(),
+                        _ => {
+                            // Tab-specific Inputhandling
+                            match self.selected_tab {
+                                SelectedTab::Tab1 => self.handle_typing_input(key),
+                                SelectedTab::Tab2 => self.handle_options_input(key),
+                                SelectedTab::Tab3 => self.handle_account_input(key),
+                                SelectedTab::Tab4 => self.handle_about_input(key),
+                            }
                         }
                     }
                 }
@@ -100,18 +108,26 @@ impl App {
         }
         Ok(())
     }
-    fn handle_typing_input(&mut self, key: event::KeyEvent) {
+
+    fn handle_typing_input(&mut self, key: KeyEvent) {
         match self.state {
-            AppState::StartScreen | AppState::RunningTest => match (key.code, key.modifiers) {
-                (KeyCode::Char(c), KeyModifiers::NONE) => self.typing_test.type_char(c),
-                (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
-                _ => {}
-            },
-            AppState::EndScreen => match (key.code, key.modifiers) {
-                (KeyCode::Char('r'), KeyModifiers::NONE)
-                | (KeyCode::Char('R'), KeyModifiers::NONE) => self.start_new_test(),
-                _ => {}
-            },
+            AppState::StartScreen | AppState::RunningTest => {
+                match (key.code, key.modifiers) {
+                    // Erlaube SHIFT Modifier für Großbuchstaben
+                    (KeyCode::Char(c), KeyModifiers::NONE) | 
+                    (KeyCode::Char(c), KeyModifiers::SHIFT) => self.typing_test.type_char(c),
+                    (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
+                    _ => {}
+                }
+            }
+            AppState::EndScreen => {
+                match (key.code, key.modifiers) {
+                    (KeyCode::Char('r'), KeyModifiers::NONE) |
+                    (KeyCode::Char('r'), KeyModifiers::SHIFT) |  // Erlaubt auch 'R'
+                    (KeyCode::Char('R'), KeyModifiers::SHIFT) => self.start_new_test(),
+                    _ => {}
+                }
+            }
         }
     }
 
