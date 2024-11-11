@@ -266,6 +266,8 @@ fn cleanup_terminal() -> Result<(), Box<dyn std::error::Error>> {
     // Optional: Set Cursor to  beginning
     stdout().execute(crossterm::cursor::MoveTo(0, 0))?;
 
+    ratatui::restore();
+
     Ok(())
 }
 
