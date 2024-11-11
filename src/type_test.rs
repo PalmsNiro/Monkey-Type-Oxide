@@ -1,7 +1,6 @@
-use std::time::{Duration, Instant};
 use log::error;
 use ratatui::style::{Color, Style};
-
+use std::time::{Duration, Instant};
 
 use crate::text_gen::get_sentence;
 
@@ -10,8 +9,8 @@ use crate::app_options::{Language, TestType};
 #[derive(Clone)]
 pub struct TestDataPerSecond {
     pub mistakes: usize,
-    pub wpm: f64,
-    pub wpm_raw: f64,
+    pub wpm: i64,
+    pub wpm_raw: i64,
     pub timestamp: u64, // Second of measurement
 }
 
@@ -61,11 +60,8 @@ impl TypingTest {
         }
     }
 
-    
-
     pub fn type_char(&mut self, c: char) {
         if let Some(target_char) = self.target_text.chars().nth(self.index) {
-            //start timer
             if self.index == 0 {
                 self.start_timer();
             }
@@ -89,16 +85,10 @@ impl TypingTest {
             }
 
             self.check_for_correct_word(target_char, is_current_char_correct);
-            // self.update_test_data();
         }
     }
 
     fn check_for_correct_word(&mut self, target_char: char, is_current_char_correct: bool) {
-        // if whitespace is correct (also counts as word)
-        if target_char == ' ' && is_current_char_correct {
-            self.correct_words_chars += 1;
-        }
-
         // Check if end of word reached (whitespace or end of text)
         let is_word_end = target_char == ' ' || self.index == self.target_text.len() - 1;
 
@@ -201,10 +191,7 @@ impl TypingTest {
     }
 
     pub fn reset(&mut self, lan: Language, test_type: TestType) {
-        let new_test = TypingTest::new(
-            lan,
-            test_type,
-        );
+        let new_test = TypingTest::new(lan, test_type);
         *self = new_test;
     }
 
@@ -229,25 +216,26 @@ impl TypingTest {
     }
 
     // total number of characters in the correctly typed words (including spaces), divided by 5 and normalised to 60 seconds.
-    pub fn get_wpm(&self) -> f64 {
-        let elapsed_seconds = self.get_elapsed_time().as_secs_f64();
-        if elapsed_seconds == 0.0 {
-            return 0.0;
+    pub fn get_wpm(&self) -> i64 {
+        let elapsed_seconds = self.get_elapsed_time().as_secs_f64() as i32;
+        if elapsed_seconds == 0 {
+            return 0;
         }
 
-        let words = self.correct_words_chars as f64 / 5.0;
-        (words * 60.0) / elapsed_seconds
+        let words = self.correct_words_chars  / 5;
+        ((words * 60) / elapsed_seconds).try_into().unwrap() 
     }
 
     // calculated just like wpm, but also includes incorrect words.
-    pub fn get_wpm_raw(&self) -> f64 {
-        let elapsed_seconds = self.get_elapsed_time().as_secs_f64();
-        if elapsed_seconds == 0.0 {
-            return 0.0;
+    pub fn get_wpm_raw(&self) -> i64 {
+        let elapsed_seconds = self.get_elapsed_time().as_secs_f64() as usize;
+        if elapsed_seconds == 0 {
+            return 0;
         }
 
-        let words = self.index as f64 / 5.0; //Standart definiton of len for a word is 5
-        (words * 60.0) / elapsed_seconds
+        // Raw WPM = (alle getippten Zeichen / 5) * (60 / Zeit)
+        let raw_words = self.total_chars_tipped  / 5;
+        ((raw_words * 60) / elapsed_seconds).try_into().unwrap()
     }
 
     pub fn update_test_data(&mut self) {

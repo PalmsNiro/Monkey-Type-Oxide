@@ -60,13 +60,13 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let wpm_points: Vec<(f64, f64)> = typing_test
         .test_data_history
         .iter()
-        .map(|f| (f.timestamp as f64, f.wpm))
+        .map(|f| (f.timestamp as f64, f.wpm as f64))
         .collect();
 
     let wpm_raw_points: Vec<(f64, f64)> = typing_test
         .test_data_history
         .iter()
-        .map(|f| (f.timestamp as f64, f.wpm_raw))
+        .map(|f| (f.timestamp as f64, f.wpm_raw as f64))
         .collect();
 
     let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
@@ -129,13 +129,13 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let wpm_points: Vec<(f64, f64)> = typing_test
         .test_data_history
         .iter()
-        .map(|f| (f.timestamp as f64, f.wpm))
+        .map(|f| (f.timestamp as f64, f.wpm as f64))
         .collect();
 
     let wpm_raw_points: Vec<(f64, f64)> = typing_test
         .test_data_history
         .iter()
-        .map(|f| (f.timestamp as f64, f.wpm_raw))
+        .map(|f| (f.timestamp as f64, f.wpm_raw as f64))
         .collect();
 
     let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
