@@ -156,8 +156,8 @@ impl App {
         match self.options_state.selected_option {
             0 => self.change_test_language(increase),
             1 => self.change_test_type(increase),
-            2 => self.options.time_race = !self.options.time_race, // Time Race
-            3 => self.options.hardcore = !self.options.hardcore,   // Hardcore
+            2 => self.options.time_race_enabled = !self.options.time_race_enabled, // Time Race
+            3 => self.options.hardcore_enabled = !self.options.hardcore_enabled,   // Hardcore
             4 => self.change_ui_language(increase),                // UI Language
             _ => {}
         }
@@ -241,10 +241,21 @@ impl App {
                     self.handle_key_event()?;
 
                     // if time race enabled
-                    if self.options.time_race {
+                    if self.options.time_race_enabled {
                         //check if time Limit is reached
                         //TODO change hardcoded 30 to constant that is stored in the options
                         if self.typing_test.get_elapsed_time().as_secs_f64() >= 30.0 {
+                            //end test
+                            self.typing_test.stop_timer();
+                            self.state = AppState::EndScreen;
+                        }
+                    }
+
+                    //if hardcore enabled
+                    if self.options.hardcore_enabled {
+                        //if wrong char has been tipped
+                        if self.typing_test.accuracy()!=100.0{
+                            //end test
                             self.typing_test.stop_timer();
                             self.state = AppState::EndScreen;
                         }
