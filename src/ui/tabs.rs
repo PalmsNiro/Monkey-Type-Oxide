@@ -59,8 +59,8 @@ pub fn draw_options(frame: &mut Frame<'_>, main_layout: &Vec<Rect>, options: &Ap
     let options_content = vec![
         (format!("Test Language: {}", options.test_language.to_string()), 0),
         (format!("Test Type: {}", options.test_type.to_string()), 1),
-        (format!("(WIP) Timed Race: {}", options.time_race_enabled.then_some("enabled").unwrap_or("disabled")), 2),
-        (format!("(WIP) Hardcore: {}", options.hardcore_enabled.then_some("enabled").unwrap_or("disabled")), 3),
+        (format!("Timed Race: {}", options.time_race_enabled.then_some("enabled").unwrap_or("disabled")), 2),
+        (format!("Hardcore: {}", options.hardcore_enabled.then_some("enabled").unwrap_or("disabled")), 3),
         (format!("(WIP) UI Language: {}", options.ui_language.to_string()), 4),
     ];
 
