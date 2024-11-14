@@ -87,7 +87,9 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') => exit_app(),
                         KeyCode::Char('l') => self.next_tab(),
+                        KeyCode::Right => self.next_tab(),
                         KeyCode::Char('h') => self.previous_tab(),
+                        KeyCode::Left => self.previous_tab(),
                         _ => {}
                     }
                 } else {
