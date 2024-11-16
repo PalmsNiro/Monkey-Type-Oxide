@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Borders, Gauge, Paragraph},
     Frame,
 };
@@ -76,7 +76,13 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let stats_text = if typing_test.text_finished {
         create_test_stats_text(typing_test)
     } else {
-        vec![Line::from("Test failed, try again")]
+        vec![
+            Line::from(vec![Span::styled(
+                "Test failed, try again!",
+                Style::default().fg(Color::LightRed),
+            )]),
+            Line::from("Press 'r' to restart the test"),
+        ]
     };
 
     frame.render_widget(

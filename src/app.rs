@@ -118,7 +118,18 @@ impl App {
                 match (key.code, key.modifiers) {
                     // Erlaube SHIFT Modifier für Großbuchstaben
                     (KeyCode::Char(c), KeyModifiers::NONE)
-                    | (KeyCode::Char(c), KeyModifiers::SHIFT) => self.typing_test.type_char(c),
+                    | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
+                        self.typing_test.type_char(c);
+                        //if hardcore enabled
+                        if self.options.hardcore_enabled {
+                            //if wrong char has been tipped
+                            if self.typing_test.accuracy() != 100.0 {
+                                //end test
+                                self.typing_test.stop_timer();
+                                self.state = AppState::EndScreen;
+                            }
+                        }
+                    }
                     (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
                     _ => {}
                 }
@@ -160,7 +171,7 @@ impl App {
             1 => self.change_test_type(increase),
             2 => self.options.time_race_enabled = !self.options.time_race_enabled, // Time Race
             3 => self.options.hardcore_enabled = !self.options.hardcore_enabled,   // Hardcore
-            4 => self.change_ui_language(increase),                // UI Language
+            4 => self.change_ui_language(increase),                                // UI Language
             _ => {}
         }
         //TODO dont reset test on every change
@@ -254,14 +265,14 @@ impl App {
                     }
 
                     //if hardcore enabled
-                    if self.options.hardcore_enabled {
-                        //if wrong char has been tipped
-                        if self.typing_test.accuracy()!=100.0{
-                            //end test
-                            self.typing_test.stop_timer();
-                            self.state = AppState::EndScreen;
-                        }
-                    }
+                    // if self.options.hardcore_enabled {
+                    //     //if wrong char has been tipped
+                    //     if self.typing_test.accuracy() != 100.0 {
+                    //         //end test
+                    //         self.typing_test.stop_timer();
+                    //         self.state = AppState::EndScreen;
+                    //     }
+                    // }
 
                     // If end  of text is reached stop the timer set typing test to finished
                     // and transition to Endscreen
