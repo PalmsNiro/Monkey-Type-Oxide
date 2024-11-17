@@ -58,6 +58,7 @@ pub struct App {
     pub state: AppState,
     selected_tab: SelectedTab,
     options_state: OptionsState,
+    reset_test: bool,
 }
 
 impl App {
@@ -69,6 +70,7 @@ impl App {
             state: AppState::StartScreen,
             selected_tab: SelectedTab::Tab1,
             options_state: OptionsState::new(),
+            reset_test: false,
         }
     }
 
@@ -176,8 +178,10 @@ impl App {
         }
         //TODO dont reset test on every change
         //*-> change when returning to test screen , set flag here that test needs reset ->When returning to startscreen reset
-        self.typing_test
-            .reset(self.options.test_language, self.options.test_type);
+        match self.options_state.selected_option {
+            0..=3 => self.reset_test = true,
+            _ => {}
+        }
     }
 
     fn change_test_language(&mut self, increase: bool) {
@@ -214,6 +218,14 @@ impl App {
         self.selected_tab = self.selected_tab.previous();
     }
 
+    fn handle_test_reset(&mut self) {
+        if self.reset_test {
+            self.typing_test
+                .reset(self.options.test_language, self.options.test_type);
+            self.reset_test = false;
+        }
+    }
+
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
         let mut last_update = Instant::now();
         let update_interval = Duration::from_secs(1);
@@ -229,7 +241,6 @@ impl App {
                 }
             }
 
-            // terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
             terminal.draw(|f| {
                 draw_ui(
                     f,
@@ -241,8 +252,10 @@ impl App {
                 )
             })?;
 
+            // State Maschine: Main program logic
             match self.state {
                 AppState::StartScreen => {
+                    self.handle_test_reset();
                     self.handle_key_event()?;
                     if self.typing_test.progress() > 0 {
                         self.typing_test.update_test_data();
@@ -251,6 +264,7 @@ impl App {
                     }
                 }
                 AppState::RunningTest => {
+                    self.handle_test_reset();
                     self.handle_key_event()?;
 
                     // if time race enabled
@@ -264,17 +278,7 @@ impl App {
                         }
                     }
 
-                    //if hardcore enabled
-                    // if self.options.hardcore_enabled {
-                    //     //if wrong char has been tipped
-                    //     if self.typing_test.accuracy() != 100.0 {
-                    //         //end test
-                    //         self.typing_test.stop_timer();
-                    //         self.state = AppState::EndScreen;
-                    //     }
-                    // }
-
-                    // If end  of text is reached stop the timer set typing test to finished
+                    // If end of text is reached stop the timer set typing test to finished
                     // and transition to Endscreen
                     if self.typing_test.index == self.typing_test.target_text.len() {
                         self.typing_test.text_finished = true;
@@ -286,9 +290,6 @@ impl App {
                     self.handle_key_event()?;
                 }
             }
-
-            // Optional: Delay to reduce weight on cpu
-            // thread::sleep(Duration::from_millis(10));
         }
     }
 }
