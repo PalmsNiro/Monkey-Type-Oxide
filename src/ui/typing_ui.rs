@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Borders, Gauge, Paragraph},
     Frame,
 };
@@ -27,25 +27,6 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
             Constraint::Length(3),      // Progress-Bar
         ])
         .split(frame.area());
-
-    //Infotext
-    // let info_text = format!(
-    //     "Mistakes: {}, Current Index: {}, Char: {}, Accuracy: {:.2}%, test_data size: {}",
-    //     typing_test.mistakes,
-    //     typing_test.index,
-    //     typing_test
-    //         .target_text
-    //         .chars()
-    //         .nth(typing_test.index)
-    //         .unwrap_or(' '),
-    //     typing_test.accuracy(),
-    //     typing_test.test_data_history.len(),
-    // );
-
-    // let info =
-        // Paragraph::new(info_text).block(Block::default().borders(Borders::ALL).title("Info"));
-
-    // frame.render_widget(info, chunks[0]);
 
     // Goal Text
     let available_width = chunks[1].width as usize - 4;
@@ -92,6 +73,43 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
         ])
         .split(frame.area());
 
+    let stats_text = if typing_test.text_finished {
+        create_test_stats_text(typing_test)
+    } else {
+        vec![
+            Line::from(vec![Span::styled(
+                "Test failed, try again!",
+                Style::default().fg(Color::LightRed),
+            )]),
+            Line::from("Press 'r' to restart the test"),
+        ]
+    };
+
+    frame.render_widget(
+        Paragraph::new(stats_text)
+            .alignment(Alignment::Center)
+            .block(Block::default().borders(Borders::ALL).title("Test stats")),
+        chunks[1],
+    );
+
+    //chart
+    let wpm_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm as f64))
+        .collect();
+
+    let wpm_raw_points: Vec<(f64, f64)> = typing_test
+        .test_data_history
+        .iter()
+        .map(|f| (f.timestamp as f64, f.wpm_raw as f64))
+        .collect();
+
+    let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
+    frame.render_widget(chart, chunks[2]);
+}
+
+fn create_test_stats_text(typing_test: &TypingTest) -> Vec<Line<'_>> {
     //accuracy text
     let accuracy_text = format!("Accuracy: {:.2}", typing_test.accuracy());
     //time text
@@ -118,26 +136,5 @@ pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
         Line::from(wpm_text),
         Line::from(error_text),
     ];
-    frame.render_widget(
-        Paragraph::new(stats_text)
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL).title("Test stats")),
-        chunks[1],
-    );
-
-    //chart
-    let wpm_points: Vec<(f64, f64)> = typing_test
-        .test_data_history
-        .iter()
-        .map(|f| (f.timestamp as f64, f.wpm as f64))
-        .collect();
-
-    let wpm_raw_points: Vec<(f64, f64)> = typing_test
-        .test_data_history
-        .iter()
-        .map(|f| (f.timestamp as f64, f.wpm_raw as f64))
-        .collect();
-
-    let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
-    frame.render_widget(chart, chunks[2]);
+    stats_text
 }

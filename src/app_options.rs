@@ -64,16 +64,16 @@ pub struct AppOptions {
     pub ui_language: Language,
     pub test_language: Language,
     pub test_type: TestType,
-    pub time_race: bool,
-    pub hardcore: bool,
+    pub time_race_enabled: bool,
+    pub hardcore_enabled: bool,
 }
 impl AppOptions {
     pub fn new() -> Self {
         Self {
             test_language: Language::En,
             test_type: TestType::RandomWords1K,
-            time_race: false,
-            hardcore: false,
+            time_race_enabled: false,
+            hardcore_enabled: false,
             ui_language: Language::En,
         }
     }

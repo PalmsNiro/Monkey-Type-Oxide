@@ -58,6 +58,7 @@ pub struct App {
     pub state: AppState,
     selected_tab: SelectedTab,
     options_state: OptionsState,
+    reset_test: bool,
 }
 
 impl App {
@@ -69,11 +70,13 @@ impl App {
             state: AppState::StartScreen,
             selected_tab: SelectedTab::Tab1,
             options_state: OptionsState::new(),
+            reset_test: false,
         }
     }
 
     fn start_new_test(&mut self) {
-        self.typing_test.reset(self.options.test_language,self.options.test_type);  // Reset Test
+        self.typing_test
+            .reset(self.options.test_language, self.options.test_type); // Reset Test
         self.state = AppState::StartScreen; // Reset App-State
     }
 
@@ -86,7 +89,9 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') => exit_app(),
                         KeyCode::Char('l') => self.next_tab(),
+                        KeyCode::Right => self.next_tab(),
                         KeyCode::Char('h') => self.previous_tab(),
+                        KeyCode::Left => self.previous_tab(),
                         _ => {}
                     }
                 } else {
@@ -114,8 +119,19 @@ impl App {
             AppState::StartScreen | AppState::RunningTest => {
                 match (key.code, key.modifiers) {
                     // Erlaube SHIFT Modifier für Großbuchstaben
-                    (KeyCode::Char(c), KeyModifiers::NONE) | 
-                    (KeyCode::Char(c), KeyModifiers::SHIFT) => self.typing_test.type_char(c),
+                    (KeyCode::Char(c), KeyModifiers::NONE)
+                    | (KeyCode::Char(c), KeyModifiers::SHIFT) => {
+                        self.typing_test.type_char(c);
+                        //if hardcore enabled
+                        if self.options.hardcore_enabled {
+                            //if wrong char has been tipped
+                            if self.typing_test.accuracy() != 100.0 {
+                                //end test
+                                self.typing_test.stop_timer();
+                                self.state = AppState::EndScreen;
+                            }
+                        }
+                    }
                     (KeyCode::Backspace, KeyModifiers::NONE) => self.typing_test.backspace(),
                     _ => {}
                 }
@@ -155,38 +171,41 @@ impl App {
         match self.options_state.selected_option {
             0 => self.change_test_language(increase),
             1 => self.change_test_type(increase),
-            2 => {self.options.time_race  =!self.options.time_race} // Time Race 
-            3 => {self.options.hardcore  =!self.options.hardcore} // Hardcore
-            4 => self.change_ui_language(increase), // UI Language 
-            _=>{}
+            2 => self.options.time_race_enabled = !self.options.time_race_enabled, // Time Race
+            3 => self.options.hardcore_enabled = !self.options.hardcore_enabled,   // Hardcore
+            4 => self.change_ui_language(increase),                                // UI Language
+            _ => {}
         }
-        //TODO dont reset test on every change 
+        //TODO dont reset test on every change
         //*-> change when returning to test screen , set flag here that test needs reset ->When returning to startscreen reset
-        self.typing_test.reset(self.options.test_language,self.options.test_type); 
+        match self.options_state.selected_option {
+            0..=3 => self.reset_test = true,
+            _ => {}
+        }
     }
 
     fn change_test_language(&mut self, increase: bool) {
-        if increase{
+        if increase {
             self.options.test_language = self.options.test_language.next();
-        }else{
+        } else {
             self.options.test_language = self.options.test_language.previous();
         }
     }
 
     fn change_test_type(&mut self, increase: bool) {
         // Implementierung für das Ändern des Testtyps
-        if increase{
+        if increase {
             self.options.test_type = self.options.test_type.next();
-        }else{
+        } else {
             self.options.test_type = self.options.test_type.previous();
         }
     }
 
     fn change_ui_language(&mut self, increase: bool) {
         // Implementierung für das Ändern des Testtyps
-        if increase{
+        if increase {
             self.options.ui_language = self.options.ui_language.next();
-        }else{
+        } else {
             self.options.ui_language = self.options.ui_language.previous();
         }
     }
@@ -197,6 +216,14 @@ impl App {
 
     pub fn previous_tab(&mut self) {
         self.selected_tab = self.selected_tab.previous();
+    }
+
+    fn handle_test_reset(&mut self) {
+        if self.reset_test {
+            self.typing_test
+                .reset(self.options.test_language, self.options.test_type);
+            self.reset_test = false;
+        }
     }
 
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -214,7 +241,6 @@ impl App {
                 }
             }
 
-            // terminal.draw(|f| draw_ui(f, &self.typing_test, &self.state))?;
             terminal.draw(|f| {
                 draw_ui(
                     f,
@@ -226,8 +252,10 @@ impl App {
                 )
             })?;
 
+            // State Maschine: Main program logic
             match self.state {
                 AppState::StartScreen => {
+                    self.handle_test_reset();
                     self.handle_key_event()?;
                     if self.typing_test.progress() > 0 {
                         self.typing_test.update_test_data();
@@ -236,28 +264,38 @@ impl App {
                     }
                 }
                 AppState::RunningTest => {
+                    self.handle_test_reset();
                     self.handle_key_event()?;
+
+                    // if time race enabled
+                    if self.options.time_race_enabled {
+                        //check if time Limit is reached
+                        //TODO change hardcoded 30 to constant that is stored in the options
+                        if self.typing_test.get_elapsed_time().as_secs_f64() >= 30.0 {
+                            //end test
+                            self.typing_test.stop_timer();
+                            self.state = AppState::EndScreen;
+                        }
+                    }
+
+                    // If end of text is reached stop the timer set typing test to finished
+                    // and transition to Endscreen
                     if self.typing_test.index == self.typing_test.target_text.len() {
                         self.typing_test.text_finished = true;
                         self.typing_test.stop_timer();
-                    }
-                    if self.typing_test.text_finished {
-                        self.state = AppState::EndScreen
+                        self.state = AppState::EndScreen;
                     }
                 }
                 AppState::EndScreen => {
                     self.handle_key_event()?;
                 }
             }
-
-            // Optional: Delay to reduce weight on cpu
-            // thread::sleep(Duration::from_millis(10));
         }
     }
 }
 
 fn cleanup_terminal() -> Result<(), Box<dyn std::error::Error>> {
-    // deactivate  Raw mode 
+    // deactivate  Raw mode
     disable_raw_mode()?;
 
     // clearing Terminal
