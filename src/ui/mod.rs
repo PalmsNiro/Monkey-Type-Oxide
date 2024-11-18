@@ -23,7 +23,7 @@ pub fn draw_ui(frame: &mut Frame, app_state: &AppState, selected_tab: &SelectedT
     draw_tabs(frame, main_layout[0], selected_tab);
     
     match selected_tab {
-        SelectedTab::Tab1 => typing_ui::draw_typing_tab(frame, typing_test, app_state),
+        SelectedTab::Tab1 => typing_ui::draw_typing_tab(frame, typing_test, app_state, options),
         SelectedTab::Tab2 => draw_options(frame, &main_layout, options,options_state),
         SelectedTab::Tab3 => {
             // Account Tab
