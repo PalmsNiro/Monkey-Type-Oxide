@@ -1,5 +1,5 @@
 # Monkey-Type-Oxide
-
+To run clone the repo, and run it with `cargo run`
 ## General
 A clone of MonkeyType made with rust and ratatui for the terminal
 
