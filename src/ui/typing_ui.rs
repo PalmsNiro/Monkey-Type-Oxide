@@ -6,25 +6,31 @@ use ratatui::{
     Frame,
 };
 
-use crate::{app::AppState, type_test::TypingTest};
+use crate::{app::AppState, app_options::AppOptions, type_test::TypingTest};
 
 use super::{create_chart, create_colored_text, wrap_text};
 
-pub fn draw_typing_tab(frame: &mut Frame, typing_test: &TypingTest, app_state: &AppState) {
+pub fn draw_typing_tab(
+    frame: &mut Frame,
+    typing_test: &TypingTest,
+    app_state: &AppState,
+    options: &AppOptions,
+) {
     match app_state {
         AppState::EndScreen => draw_end_screen(frame, typing_test),
-        _ => draw_typing_screen(frame, typing_test),
+        _ => draw_typing_screen(frame, typing_test, options),
     }
 }
 
-pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
+pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest, options: &AppOptions) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(2),      // Spacing after tabs
             Constraint::Percentage(30), // Goaltext
             Constraint::Percentage(50), // chart
-            Constraint::Length(3),      // Progress-Bar
+            Constraint::Length(3),      // Progress-Bar (text)
+            Constraint::Length(3),      //Progress-Bar Time(if enabled)
         ])
         .split(frame.area());
 
@@ -34,7 +40,7 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let colored_text =
         create_colored_text(&wrapped_text, &typing_test.colored_chars, typing_test.index);
     let target_text = Paragraph::new(colored_text)
-        .block(Block::default().borders(Borders::ALL).title("Zieltext"));
+        .block(Block::default().borders(Borders::ALL).title("Goal text"));
     frame.render_widget(target_text, chunks[1]);
 
     // chart
@@ -53,14 +59,40 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest) {
     let chart = create_chart(&typing_test.test_data_history, &wpm_points, &wpm_raw_points);
     frame.render_widget(chart, chunks[2]);
 
-    // Progress Bar
+    // Progress Bar (Text Progress)
     let progress = typing_test.progress();
     let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Fortschritt"))
+        .block(Block::default().borders(Borders::ALL).title("Progress"))
         .gauge_style(Style::default().fg(Color::Cyan))
         .percent(progress);
-
     frame.render_widget(gauge, chunks[3]);
+
+    // Time Race Bar (if activated)
+    if options.time_race_enabled {
+        const TIME_LIMIT: f64 = 30.0; // TODO: aus den Options holen
+        let elapsed = typing_test.get_elapsed_time().as_secs_f64();
+        let remaining_time = (TIME_LIMIT - elapsed).max(0.0);
+        let time_progress = ((remaining_time / TIME_LIMIT) * 100.0) as u16;
+
+        // Color based on time progress
+        let color = match time_progress {
+            0..=20 => Color::Red,
+            21..=50 => Color::Yellow,
+            _ => Color::Green,
+        };
+
+        let time_gauge = Gauge::default()
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Remaining Time"),
+            )
+            .gauge_style(Style::default().fg(color))
+            .percent(time_progress)
+            .label(format!("{:.1}s", remaining_time));
+
+        frame.render_widget(time_gauge, chunks[4]);
+    }
 }
 
 pub fn draw_end_screen(frame: &mut Frame, typing_test: &TypingTest) {
