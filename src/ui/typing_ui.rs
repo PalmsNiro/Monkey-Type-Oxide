@@ -72,13 +72,19 @@ pub fn draw_typing_screen(frame: &mut Frame, typing_test: &TypingTest, options: 
         const TIME_LIMIT: f64 = 30.0; // TODO: aus den Options holen
         let elapsed = typing_test.get_elapsed_time().as_secs_f64();
         let remaining_time = (TIME_LIMIT - elapsed).max(0.0);
-        let time_progress = ((remaining_time / TIME_LIMIT) * 100.0) as u16;
+        // let time_progress = ((remaining_time / TIME_LIMIT) * 100.0) as u16;
+        let time_progress = 100 - ((remaining_time / TIME_LIMIT) * 100.0) as u16;
 
         // Color based on time progress
+        // let color = match time_progress {
+        //     0..=20 => Color::Red,
+        //     21..=50 => Color::Yellow,
+        //     _ => Color::Green,
+        // };
         let color = match time_progress {
-            0..=20 => Color::Red,
-            21..=50 => Color::Yellow,
-            _ => Color::Green,
+            0..=50 => Color::Green,
+            51..=70 => Color::Yellow,
+            _ => Color::Red,
         };
 
         let time_gauge = Gauge::default()
